@@ -5,20 +5,28 @@
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
+import { getSupabaseClient } from "./supabase";
+
 async function getAuthToken(): Promise<string | null> {
-  // In browser: get the Supabase session access_token from localStorage/cookie
   if (typeof window === "undefined") return null;
   try {
-    // The Supabase JS client stores session in localStorage under this key pattern
-    const keys = Object.keys(localStorage).filter((k) =>
-      k.includes("supabase") && k.includes("auth-token")
-    );
-    for (const key of keys) {
-      const raw = localStorage.getItem(key);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        const token = parsed?.access_token || parsed?.session?.access_token;
-        if (token) return token;
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      const { data } = await supabase.auth.getSession();
+      if (data?.session?.access_token) {
+        return data.session.access_token;
+      }
+    }
+    // Fallback search in localStorage
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i) || "";
+      if (key.includes("auth-token") || key.includes("supabase")) {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const token = parsed?.access_token || parsed?.session?.access_token;
+          if (token) return token;
+        }
       }
     }
   } catch {

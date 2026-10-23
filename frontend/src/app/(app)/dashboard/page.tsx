@@ -85,8 +85,13 @@ export default function DashboardPage() {
     try {
       const summary = await dashboardApi.summary();
       setData(summary);
-    } catch (e) {
-      setError("Could not connect to the backend. Make sure Django is running on port 8000.");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg.includes("403") || msg.includes("401")) {
+        setError("You are not signed in. Please sign in to access your dream journal.");
+      } else {
+        setError("Could not connect to the backend. Make sure Django is running on port 8000.");
+      }
     } finally {
       setLoading(false);
     }
@@ -146,14 +151,23 @@ export default function DashboardPage() {
 
       {error && (
         <div
-          className="rounded-xl p-4 text-sm"
+          className="rounded-xl p-4 text-sm flex items-center justify-between flex-wrap gap-3"
           style={{
             background: "rgba(243,217,139,0.08)",
             border: "1px solid rgba(243,217,139,0.2)",
             color: "#f3d98b",
           }}
         >
-          ⚠️ {error}
+          <span>⚠️ {error}</span>
+          {error.includes("sign in") && (
+            <Link
+              href="/sign-in"
+              className="btn-primary py-1.5 px-3 text-xs"
+              style={{ textDecoration: "none" }}
+            >
+              Sign In Now →
+            </Link>
+          )}
         </div>
       )}
 
