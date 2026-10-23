@@ -1,5 +1,5 @@
 /**
- * API client for the ObsidianDreams Django backend.
+ * API client for the Stardrift Django backend.
  * All calls go to NEXT_PUBLIC_API_BASE_URL (defaults to http://localhost:8000).
  */
 

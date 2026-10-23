@@ -16,6 +16,8 @@ import {
   Sun,
   LogOut,
   Save,
+  AlertTriangle,
+  X,
 } from "lucide-react";
 
 function SettingSection({
@@ -52,7 +54,9 @@ export default function SettingsPage() {
   const [displayName, setDisplayName] = useState("");
   const [timezone, setTimezone] = useState("UTC");
   const [theme, setTheme] = useState<"dark" | "light">("dark");
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     profileApi.get()
@@ -87,14 +91,22 @@ export default function SettingsPage() {
   }
 
   async function handleDeleteAccount() {
-    if (!confirmDelete) { setConfirmDelete(true); return; }
+    setDeleteError(null);
+    setDeleting(true);
     try {
       await profileApi.delete();
       const supabase = getSupabaseClient();
-      if (supabase) await supabase.auth.signOut();
-      router.push("/");
-    } catch {
-      // show error
+      if (supabase) {
+        await supabase.auth.signOut();
+      }
+      try {
+        localStorage.clear();
+      } catch {}
+      window.location.href = "/";
+    } catch (err) {
+      console.error("Failed to delete account:", err);
+      setDeleteError(err instanceof Error ? err.message : "Failed to delete account. Please try again.");
+      setDeleting(false);
     }
   }
 
@@ -105,7 +117,7 @@ export default function SettingsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "obsidiandreams-export.json";
+    a.download = "stardrift-export.json";
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -278,23 +290,134 @@ export default function SettingsPage() {
             style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
           >
             <div>
-              <p className="text-sm" style={{ color: "#f2a6c5" }}>Delete account</p>
+              <p className="text-sm font-semibold" style={{ color: "#f2a6c5" }}>Delete account</p>
               <p className="text-xs" style={{ color: "#7781ac" }}>
-                {confirmDelete
-                  ? "⚠️ Are you sure? This cannot be undone."
-                  : "Permanently delete your account and all dream data"}
+                Permanently delete your account, dream records, and patterns
               </p>
             </div>
             <button
-              onClick={handleDeleteAccount}
+              type="button"
+              onClick={() => { setShowDeleteModal(true); setDeleteError(null); }}
               className="btn-danger text-sm py-2 px-4"
             >
-              <Trash2 size={15} />
-              {confirmDelete ? "Confirm" : "Delete"}
+              <Trash2 size={15} /> Delete
             </button>
           </div>
         </div>
       </SettingSection>
+
+      {/* Delete Account Modal Popup */}
+      {showDeleteModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(7, 11, 25, 0.75)", backdropFilter: "blur(8px)" }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !deleting) {
+              setShowDeleteModal(false);
+              setDeleteError(null);
+            }
+          }}
+        >
+          <div
+            className="glass-card max-w-md w-full p-6 relative flex flex-col gap-5 fade-up"
+            style={{
+              background: "linear-gradient(145deg, rgba(22, 28, 54, 0.95), rgba(16, 20, 42, 0.98))",
+              border: "1px solid rgba(242, 166, 197, 0.3)",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 30px rgba(242, 166, 197, 0.15)",
+            }}
+          >
+            {/* Close button */}
+            <button
+              type="button"
+              onClick={() => {
+                if (!deleting) {
+                  setShowDeleteModal(false);
+                  setDeleteError(null);
+                }
+              }}
+              className="absolute top-4 right-4 p-1.5 rounded-lg transition-colors cursor-pointer"
+              style={{ color: "#7781ac" }}
+              aria-label="Close modal"
+              disabled={deleting}
+            >
+              <X size={18} />
+            </button>
+
+            {/* Header Icon + Title */}
+            <div className="flex items-center gap-3">
+              <div
+                className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+                style={{
+                  background: "rgba(242, 166, 197, 0.12)",
+                  border: "1px solid rgba(242, 166, 197, 0.3)",
+                }}
+              >
+                <AlertTriangle size={24} style={{ color: "#f2a6c5" }} />
+              </div>
+              <div>
+                <h3
+                  className="text-lg font-bold"
+                  style={{ fontFamily: "Quicksand, sans-serif", color: "#ffffff" }}
+                >
+                  Delete Account
+                </h3>
+                <p className="text-xs" style={{ color: "#7781ac" }}>
+                  This action is permanent and cannot be undone
+                </p>
+              </div>
+            </div>
+
+            {/* Warning Message */}
+            <p className="text-sm leading-relaxed" style={{ color: "#aeb8e0" }}>
+              Are you sure you want to permanently delete your account? All your dream logs, interpretations, patterns, and profile settings will be erased immediately.
+            </p>
+
+            {deleteError && (
+              <div
+                className="rounded-xl p-3 text-xs"
+                style={{
+                  background: "rgba(239, 68, 68, 0.1)",
+                  border: "1px solid rgba(239, 68, 68, 0.3)",
+                  color: "#f87171",
+                }}
+              >
+                {deleteError}
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteError(null);
+                }}
+                disabled={deleting}
+                className="btn-ghost text-sm py-2 px-4 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+                className="btn-danger text-sm py-2 px-5 inline-flex items-center gap-2 cursor-pointer"
+              >
+                {deleting ? (
+                  <>
+                    <span className="spinner" /> Deleting…
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={16} /> Yes, delete permanently
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

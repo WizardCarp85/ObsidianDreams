@@ -71,7 +71,7 @@ export default function SignInPage() {
               className="text-xl font-bold"
               style={{ fontFamily: "Quicksand, sans-serif", color: "#eaf0ff" }}
             >
-              Obsidian<span style={{ color: "#b9a6f5" }}>Dreams</span>
+              Star<span style={{ color: "#6bc2ff" }}>drift</span>
             </span>
           </Link>
         </div>

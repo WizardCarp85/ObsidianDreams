@@ -28,10 +28,14 @@ export function Sidebar() {
   return (
     <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
       {/* Logo */}
-      <div className="flex items-center gap-3 p-5 pb-3">
+      <Link
+        href="/"
+        className="flex items-center gap-3 p-5 pb-3 transition-opacity hover:opacity-90 cursor-pointer"
+        title="Stardrift Home"
+      >
         <div
           className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center"
-          style={{ background: "linear-gradient(135deg, #6c8eff, #b9a6f5)" }}
+          style={{ background: "linear-gradient(135deg, #6c8eff, #6bc2ff)" }}
         >
           <Moon size={18} className="text-white" />
         </div>
@@ -40,10 +44,10 @@ export function Sidebar() {
             className="text-lg font-bold"
             style={{ fontFamily: "Quicksand, sans-serif", color: "#eaf0ff" }}
           >
-            Obsidian<span style={{ color: "#b9a6f5" }}>Dreams</span>
+            Star<span style={{ color: "#6bc2ff" }}>drift</span>
           </span>
         )}
-      </div>
+      </Link>
 
       {/* New Dream button */}
       <div className="px-3 py-3">

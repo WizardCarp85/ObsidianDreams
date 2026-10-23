@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ObsidianDreams — Your Personal Dream Journal",
+  title: "Stardrift — Your Personal Dream Journal",
   description:
     "Understand the stories your mind tells at night. Log, organize, and explore patterns in your dreams with AI-powered insights.",
-  keywords: ["dream journal", "lucid dreams", "dream tracker", "sleep journal"],
+  keywords: ["dream journal", "lucid dreams", "dream tracker", "sleep journal", "stardrift"],
   openGraph: {
-    title: "ObsidianDreams",
+    title: "Stardrift",
     description: "Understand the stories your mind tells at night.",
     type: "website",
   },
