@@ -1,0 +1,36 @@
+# Environments & Secrets
+.env
+.env.*
+!.env.example
+*.env
+backend/.env
+frontend/.env.local
+
+# Python & Virtualenv
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.sqlite3
+
+# Node & Next.js
+node_modules/
+frontend/node_modules/
+frontend/.next/
+.next/
+out/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# Logs & Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS & Editor
+.DS_Store
+.idea/
+.vscode/
