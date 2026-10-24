@@ -24,7 +24,7 @@ from dreams.serializers import DreamSerializer, InsightSerializer, UserProfileSe
 @api_view(["GET"])
 @permission_classes([permissions.AllowAny])
 def health_check(request):
-    return Response({"status": "ok", "service": "obsidiandreams-backend"})
+    return Response({"status": "ok", "service": "stardrift-backend"})
 
 
 # ---------------------------------------------------------------------------
@@ -365,4 +365,27 @@ class UserProfileView(APIView):
             profile.delete()
         except UserProfile.DoesNotExist:
             pass
+
+        # Also remove user from Supabase Auth so they can't log in anymore
+        supabase_url = getattr(settings, "SUPABASE_URL", "")
+        service_role_key = getattr(settings, "SUPABASE_SERVICE_ROLE_KEY", "")
+        if supabase_url and service_role_key and user_id:
+            try:
+                import urllib.request
+                import ssl
+                ctx = ssl.create_default_context()
+                ctx.check_hostname = False
+                ctx.verify_mode = ssl.CERT_NONE
+                req = urllib.request.Request(
+                    f"{supabase_url.rstrip('/')}/auth/v1/admin/users/{user_id}",
+                    headers={
+                        "apikey": service_role_key,
+                        "Authorization": f"Bearer {service_role_key}",
+                    },
+                    method="DELETE",
+                )
+                urllib.request.urlopen(req, context=ctx)
+            except Exception as e:
+                print(f"[ACCOUNT DELETE] Supabase auth user delete warning: {e}")
+
         return Response(status=status.HTTP_204_NO_CONTENT)

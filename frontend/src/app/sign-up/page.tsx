@@ -1,11 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import type { FormEvent } from "react";
 import Link from "next/link";
-import { Moon, Eye, EyeOff } from "lucide-react";
+import {
+  ArrowRight,
+  Eye,
+  EyeOff,
+  Info,
+  LockKeyhole,
+  Mail,
+  Moon,
+  UserRound,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { AuthShell } from "@/components/AuthShell";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
 import { authApi } from "@/lib/api";
-import { useRouter } from "next/navigation";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -15,204 +26,266 @@ export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  async function handleSignUp(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSignUp(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setError(null);
+    setNotice(null);
     setLoading(true);
 
-    const supabase = getSupabaseClient();
-    if (!supabase) {
-      setError("Authentication not configured. Add your Supabase environment variables.");
-      setLoading(false);
-      return;
-    }
+    try {
+      const supabase = getSupabaseClient();
 
-    // 1. Sign up user with email & password
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: name },
-      },
-    });
+      if (!supabase) {
+        setError(
+          "Authentication isn't configured yet. Add your Supabase environment variables."
+        );
+        return;
+      }
 
-    if (signUpError) {
-      setError(signUpError.message);
-      setLoading(false);
-      return;
-    }
-
-    // 2. If no session returned (or to guarantee login), perform direct password login
-    let session = signUpData.session;
-    let user = signUpData.user;
-
-    if (!session) {
-      const { data: signInData, error: signInError } =
-        await supabase.auth.signInWithPassword({
-          email,
+      const { data: signUpData, error: signUpError } =
+        await supabase.auth.signUp({
+          email: email.trim(),
           password,
+          options: {
+            data: { full_name: name.trim() },
+          },
         });
 
-      if (!signInError && signInData.session) {
-        session = signInData.session;
-        user = signInData.user;
+      if (signUpError) {
+        setError(signUpError.message);
+        return;
       }
-    }
 
-    // 3. Sync profile to Django backend
-    if (user) {
-      try {
-        await authApi.sync(user);
-      } catch {
-        /* non-fatal */
+      let activeUser = signUpData.user;
+      let hasSession = Boolean(signUpData.session);
+
+      // If confirmation is disabled, try signing in if signUp returned no session.
+      if (!hasSession) {
+        const { data: signInData, error: signInError } =
+          await supabase.auth.signInWithPassword({
+            email: email.trim(),
+            password,
+          });
+
+        if (!signInError && signInData.session) {
+          hasSession = true;
+          activeUser = signInData.user;
+        }
       }
-    }
 
-    setLoading(false);
-    // 4. Directly enter dashboard
-    router.push("/dashboard");
+      if (hasSession) {
+        if (activeUser) {
+          try {
+            await authApi.sync(activeUser);
+          } catch {
+            // Profile sync is non-fatal; Supabase authentication has succeeded.
+          }
+        }
+
+        router.push("/dashboard");
+        return;
+      }
+
+      setNotice(
+        "Your account was created. Check your inbox for a confirmation link, then sign in."
+      );
+    } catch {
+      setError("Something went wrong while creating your account. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-6"
-      style={{ background: "linear-gradient(135deg, #0b1024 0%, #1b2a6b 45%, #0f1535 100%)" }}
-    >
-      <div className="aurora-bg" aria-hidden />
-
-      <div className="relative z-10 w-full max-w-md">
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #6c8eff, #b9a6f5)" }}
-            >
-              <Moon size={20} className="text-white" />
-            </div>
-            <span
-              className="text-xl font-bold"
-              style={{ fontFamily: "Quicksand, sans-serif", color: "#eaf0ff" }}
-            >
-              Star<span style={{ color: "#6bc2ff" }}>drift</span>
-            </span>
-          </Link>
+    <AuthShell>
+      <section
+        aria-labelledby="signup-title"
+        className="auth-cartoon-card rounded-[28px] bg-[#162e59] p-6 sm:p-8"
+      >
+        <div className="mb-5 flex justify-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border-[2.5px] border-[#081326] bg-[#64dfd0] shadow-[0_4px_0_0_#081326]">
+            <Moon
+              size={26}
+              className="text-[#081326]"
+              fill="#ffe082"
+              strokeWidth={2.5}
+            />
+          </div>
         </div>
 
-        <div className="glass-card p-8">
-          <h1
-            className="text-2xl font-bold mb-2 text-center"
-            style={{ fontFamily: "Quicksand, sans-serif" }}
+        <h1
+          id="signup-title"
+          className="mb-2 text-center text-2xl font-extrabold text-white"
+        >
+          Begin your dream journal
+        </h1>
+        <p className="mb-6 text-center text-sm font-medium text-[#a9c7ec]">
+          Create a cozy place to save your nighttime stories.
+        </p>
+
+        {!isSupabaseConfigured && (
+          <div
+            role="status"
+            className="mb-4 flex gap-3 rounded-2xl border-2 border-[#081326] bg-[#ffe082]/10 p-3.5 text-sm font-medium leading-relaxed text-[#ffe9a8]"
           >
-            Begin your journey
-          </h1>
-          <p className="text-sm text-center mb-6" style={{ color: "#7781ac" }}>
-            Create your free dream journal
+            <Info size={18} className="mt-0.5 shrink-0" />
+            <p>
+              Supabase isn&apos;t configured. Add{" "}
+              <code className="font-bold">NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
+              <code className="font-bold">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>{" "}
+              to your <code className="font-bold">.env.local</code>.
+            </p>
+          </div>
+        )}
+
+        {notice && (
+          <p
+            role="status"
+            aria-live="polite"
+            className="mb-4 flex gap-3 rounded-2xl border-2 border-[#081326] bg-[#64dfd0]/10 px-4 py-3 text-sm font-semibold leading-relaxed text-[#b7fff0]"
+          >
+            <Mail size={18} className="mt-0.5 shrink-0" />
+            <span>{notice}</span>
           </p>
+        )}
 
-          {!isSupabaseConfigured && (
-            <div
-              className="rounded-xl p-4 mb-4 text-sm"
-              style={{
-                background: "rgba(243,217,139,0.1)",
-                border: "1px solid rgba(243,217,139,0.25)",
-                color: "#f3d98b",
-              }}
+        <form onSubmit={handleSignUp} className="flex flex-col gap-4">
+          <div>
+            <label
+              htmlFor="signup-name"
+              className="mb-2 block text-sm font-bold text-[#cfe3fc]"
             >
-              ⚠️ Supabase not configured. Add your environment variables to enable sign-up.
-            </div>
-          )}
-
-          <form onSubmit={handleSignUp} className="flex flex-col gap-4">
-            <div>
-              <label className="block text-sm mb-2" style={{ color: "#aeb8e0" }}>
-                Your name
-              </label>
+              Your name <span className="font-medium text-[#8fb2de]">(optional)</span>
+            </label>
+            <div className="relative">
+              <UserRound
+                size={17}
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6bc2ff]"
+                aria-hidden="true"
+              />
               <input
-                id="name"
+                id="signup-name"
+                name="name"
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="input-glass"
+                onChange={(event) => setName(event.target.value)}
+                className="auth-cartoon-input has-leading-icon"
                 placeholder="Luna Dreamer"
                 autoComplete="name"
               />
             </div>
+          </div>
 
-            <div>
-              <label className="block text-sm mb-2" style={{ color: "#aeb8e0" }}>
-                Email address
-              </label>
+          <div>
+            <label
+              htmlFor="signup-email"
+              className="mb-2 block text-sm font-bold text-[#cfe3fc]"
+            >
+              Email address
+            </label>
+            <div className="relative">
+              <Mail
+                size={17}
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6bc2ff]"
+                aria-hidden="true"
+              />
               <input
                 id="signup-email"
+                name="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="input-glass"
+                onChange={(event) => setEmail(event.target.value)}
+                className="auth-cartoon-input has-leading-icon"
                 placeholder="you@example.com"
                 required
                 autoComplete="email"
+                autoCapitalize="none"
               />
             </div>
+          </div>
 
-            <div>
-              <label className="block text-sm mb-2" style={{ color: "#aeb8e0" }}>
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  id="signup-password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="input-glass pr-12"
-                  placeholder="At least 6 characters"
-                  required
-                  minLength={6}
-                  autoComplete="new-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2"
-                  style={{ color: "#7781ac" }}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </div>
-
-            {error && (
-              <p className="text-sm" style={{ color: "#f2a6c5" }}>
-                {error}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              className="btn-primary w-full justify-center mt-2"
-              disabled={loading}
+          <div>
+            <label
+              htmlFor="signup-password"
+              className="mb-2 block text-sm font-bold text-[#cfe3fc]"
             >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <span className="spinner" />
-                  Creating account…
-                </span>
-              ) : (
-                "Create free account"
-              )}
-            </button>
-          </form>
-        </div>
+              Password
+            </label>
+            <div className="relative">
+              <LockKeyhole
+                size={17}
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6bc2ff]"
+                aria-hidden="true"
+              />
+              <input
+                id="signup-password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                className="auth-cartoon-input has-leading-icon has-trailing-icon"
+                placeholder="At least 6 characters"
+                required
+                minLength={6}
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((visible) => !visible)}
+                className="absolute right-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-[#8fb2de] hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffe082]"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-pressed={showPassword}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
 
-        <p className="text-center mt-5 text-sm" style={{ color: "#7781ac" }}>
-          Already have an account?{" "}
-          <Link href="/sign-in" style={{ color: "#8fa8ff" }}>
-            Sign in
-          </Link>
-        </p>
-      </div>
-    </div>
+          {error && (
+            <p
+              role="alert"
+              aria-live="polite"
+              className="rounded-xl border-2 border-[#ff859d]/40 bg-[#ff859d]/10 px-4 py-3 text-sm font-semibold text-[#ffd2db]"
+            >
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            className="auth-cartoon-primary mt-1 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-extrabold"
+            disabled={loading}
+            aria-busy={loading}
+          >
+            {loading ? (
+              <>
+                <span
+                  className="h-4 w-4 animate-spin rounded-full border-2 border-[#081326]/30 border-t-[#081326]"
+                  aria-hidden="true"
+                />
+                Creating account…
+              </>
+            ) : (
+              <>
+                Create free account
+                <ArrowRight size={17} strokeWidth={2.5} />
+              </>
+            )}
+          </button>
+        </form>
+      </section>
+
+      <p className="mt-6 text-center text-sm font-semibold text-[#a9c7ec]">
+        Already have an account?{" "}
+        <Link
+          href="/sign-in"
+          className="font-extrabold text-[#75c6ff] underline decoration-[#75c6ff]/40 underline-offset-4 hover:text-white"
+        >
+          Sign in
+        </Link>
+      </p>
+    </AuthShell>
   );
 }

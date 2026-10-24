@@ -1,4 +1,4 @@
-# ObsidianDreams 🌙
+# Stardrift 🌙
 
 > **Understand the stories your mind tells at night.**
 > 
