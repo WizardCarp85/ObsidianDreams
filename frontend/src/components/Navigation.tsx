@@ -20,7 +20,7 @@ import { getSupabaseClient } from "@/lib/supabase";
 import { profileApi } from "@/lib/api";
 import type { User } from "@supabase/supabase-js";
 
-const BRAND = { first: "Obsidian", second: "Dreams" };
+const BRAND = { first: "Star", second: "drift" };
 const SIDEBAR_STORAGE_KEY = "dream-sidebar-collapsed";
 
 interface NavItem {
@@ -742,7 +742,7 @@ export function MobileHeader() {
           <Moon size={17} className="text-[#081326]" fill="#ffe082" strokeWidth={2.5} />
         </div>
         <span className="text-base font-extrabold text-white">
-          Obsidian<span className="text-[#6bc2ff]">Dreams</span>
+          Star<span className="text-[#6bc2ff]">drift</span>
         </span>
       </Link>
 

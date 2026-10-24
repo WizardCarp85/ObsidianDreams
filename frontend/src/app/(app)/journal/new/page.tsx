@@ -13,7 +13,7 @@ import {
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "New Dream — ObsidianDreams",
+  title: "New Dream — Stardrift",
   description: "Log a new dream entry in your private dream journal",
 };
 

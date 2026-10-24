@@ -308,6 +308,10 @@ select option {
   color: #eef6ff;
 }
 
+input[type="date"] {
+  color-scheme: dark;
+}
+
 [data-theme="light"] .input-glass {
   background: #fff;
   border-color: #d0d8f0;

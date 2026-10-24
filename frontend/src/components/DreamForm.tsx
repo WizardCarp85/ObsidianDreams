@@ -22,6 +22,7 @@ import {
   CloudRain,
   Zap,
   Heart,
+  Check,
   type LucideIcon,
 } from "lucide-react";
 import { dreamsApi } from "@/lib/api";
@@ -34,6 +35,8 @@ import {
   getYesterdayDateString,
 } from "@/lib/utils";
 import { VoiceRecorderButton } from "@/components/VoiceRecorder";
+import { CartoonDatePicker } from "@/components/CartoonDatePicker";
+import { CartoonDreamTypeSelect } from "@/components/CartoonDreamTypeSelect";
 
 const MOOD_OPTIONS: Mood[] = [
   "peaceful",
@@ -341,13 +344,10 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
                 <Calendar size={14} className="text-[#64dfd0]" /> Dream Date
               </span>
             </label>
-            <input
+            <CartoonDatePicker
               id="dream-date"
-              type="date"
               value={form.dream_date}
-              onChange={(e) => update("dream_date", e.target.value)}
-              className="cartoon-form-input text-sm"
-              required
+              onChange={(dateStr) => update("dream_date", dateStr)}
             />
           </div>
 
@@ -355,18 +355,11 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
             <label htmlFor="dream-type" className="block text-sm font-extrabold text-[#cfe3fc] mb-2">
               Dream Type
             </label>
-            <select
+            <CartoonDreamTypeSelect
               id="dream-type"
               value={form.dream_type}
-              onChange={(e) => update("dream_type", e.target.value as DreamType)}
-              className="cartoon-form-input text-sm cursor-pointer"
-            >
-              {DREAM_TYPES.map((t) => (
-                <option key={t} value={t} className="bg-[#0e2040] text-white">
-                  {DREAM_TYPE_LABELS[t]}
-                </option>
-              ))}
-            </select>
+              onChange={(t) => update("dream_type", t)}
+            />
           </div>
         </div>
 
@@ -441,37 +434,103 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
 
         {/* Cartoon Checkbox Toggles: Lucid & Recurring */}
         <div className="grid sm:grid-cols-2 gap-3 pt-2">
-          <label className="flex items-center gap-3 rounded-2xl border-2 border-[#081326] bg-[#0e2040] p-3 cursor-pointer hover:bg-[#12284e] transition-colors">
+          {/* Lucid Dream Toggle Card */}
+          <label
+            className={`group relative flex items-center justify-between p-3.5 rounded-2xl border-[2.5px] border-[#081326] cursor-pointer select-none transition-all duration-150 active:translate-y-0.5 ${
+              form.is_lucid
+                ? "bg-[#16315c] shadow-[0_4px_0_0_#081326,inset_0_2px_0_0_rgba(255,224,130,0.25)]"
+                : "bg-[#0e2040] shadow-[0_3px_0_0_#081326] hover:bg-[#13284f]"
+            }`}
+          >
             <input
               type="checkbox"
               checked={form.is_lucid}
               onChange={(e) => update("is_lucid", e.target.checked)}
-              className="h-5 w-5 rounded-lg border-2 border-[#081326] accent-[#ffe082] cursor-pointer"
+              className="sr-only"
             />
-            <div>
-              <span className="flex items-center gap-1.5 text-xs font-extrabold text-white">
-                <Sparkles size={13} className="text-[#ffe082]" /> Lucid Dream
+
+            <div className="flex items-center gap-3 min-w-0">
+              <span
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-[#081326] shadow-[0_2px_0_0_#081326] transition-transform group-hover:scale-105 ${
+                  form.is_lucid ? "bg-[#ffe082]" : "bg-[#183463]"
+                }`}
+              >
+                <Sparkles
+                  size={18}
+                  strokeWidth={2.6}
+                  style={{ color: form.is_lucid ? "#081326" : "#ffe082" }}
+                />
               </span>
-              <span className="block text-[11px] font-semibold text-[#8cb2e0]">
-                I was aware I was dreaming
-              </span>
+
+              <div className="min-w-0">
+                <span className="block text-xs font-extrabold text-white leading-tight">
+                  Lucid Dream
+                </span>
+                <span className="block truncate text-[11px] font-semibold text-[#8cb2e0]">
+                  I was aware I was dreaming
+                </span>
+              </div>
+            </div>
+
+            {/* Custom Cartoon Checkbox Squircle */}
+            <div
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 border-[#081326] transition-all ml-2 ${
+                form.is_lucid
+                  ? "bg-[#ffe082] text-[#081326] shadow-[0_2px_0_0_#081326] scale-105"
+                  : "bg-[#09152b] text-transparent"
+              }`}
+            >
+              <Check size={14} strokeWidth={3.2} />
             </div>
           </label>
 
-          <label className="flex items-center gap-3 rounded-2xl border-2 border-[#081326] bg-[#0e2040] p-3 cursor-pointer hover:bg-[#12284e] transition-colors">
+          {/* Recurring Dream Toggle Card */}
+          <label
+            className={`group relative flex items-center justify-between p-3.5 rounded-2xl border-[2.5px] border-[#081326] cursor-pointer select-none transition-all duration-150 active:translate-y-0.5 ${
+              form.is_recurring
+                ? "bg-[#16315c] shadow-[0_4px_0_0_#081326,inset_0_2px_0_0_rgba(100,223,208,0.25)]"
+                : "bg-[#0e2040] shadow-[0_3px_0_0_#081326] hover:bg-[#13284f]"
+            }`}
+          >
             <input
               type="checkbox"
               checked={form.is_recurring}
               onChange={(e) => update("is_recurring", e.target.checked)}
-              className="h-5 w-5 rounded-lg border-2 border-[#081326] accent-[#64dfd0] cursor-pointer"
+              className="sr-only"
             />
-            <div>
-              <span className="flex items-center gap-1.5 text-xs font-extrabold text-white">
-                <Repeat size={13} className="text-[#64dfd0]" /> Recurring Dream
+
+            <div className="flex items-center gap-3 min-w-0">
+              <span
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-[#081326] shadow-[0_2px_0_0_#081326] transition-transform group-hover:scale-105 ${
+                  form.is_recurring ? "bg-[#64dfd0]" : "bg-[#183463]"
+                }`}
+              >
+                <Repeat
+                  size={18}
+                  strokeWidth={2.6}
+                  style={{ color: form.is_recurring ? "#081326" : "#64dfd0" }}
+                />
               </span>
-              <span className="block text-[11px] font-semibold text-[#8cb2e0]">
-                I&apos;ve experienced this before
-              </span>
+
+              <div className="min-w-0">
+                <span className="block text-xs font-extrabold text-white leading-tight">
+                  Recurring Dream
+                </span>
+                <span className="block truncate text-[11px] font-semibold text-[#8cb2e0]">
+                  I&apos;ve experienced this before
+                </span>
+              </div>
+            </div>
+
+            {/* Custom Cartoon Checkbox Squircle */}
+            <div
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 border-[#081326] transition-all ml-2 ${
+                form.is_recurring
+                  ? "bg-[#64dfd0] text-[#081326] shadow-[0_2px_0_0_#081326] scale-105"
+                  : "bg-[#09152b] text-transparent"
+              }`}
+            >
+              <Check size={14} strokeWidth={3.2} />
             </div>
           </label>
         </div>

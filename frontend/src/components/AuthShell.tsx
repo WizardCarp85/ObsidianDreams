@@ -245,7 +245,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
               />
             </span>
             <span className="text-left text-xl font-extrabold tracking-tight text-white">
-              Obsidian<span className="text-[#6bc2ff]">Dreams</span>
+              Star<span className="text-[#6bc2ff]">drift</span>
             </span>
           </Link>
 
