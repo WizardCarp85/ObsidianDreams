@@ -227,6 +227,7 @@ export function Sidebar() {
           top: 0;
           height: 100vh;
           width: 256px;
+          flex-shrink: 0;
           background: linear-gradient(180deg, #0d1d3a 0%, #132952 52%, #0c1b36 100%);
           border-right: 3px solid #081326;
           box-shadow: 4px 0 0 0 rgba(8, 19, 38, 0.35), inset -1px 0 0 0 rgba(255, 255, 255, 0.08);

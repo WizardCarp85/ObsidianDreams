@@ -2,16 +2,57 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Save, Mic, Type, Star, X, Plus, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import {
+  Save,
+  Mic,
+  Type,
+  Star,
+  X,
+  Plus,
+  ArrowLeft,
+  Sparkles,
+  Repeat,
+  Calendar,
+  Hash,
+  AlertTriangle,
+  Loader2,
+  Feather,
+  Smile,
+  CloudRain,
+  Zap,
+  Heart,
+  type LucideIcon,
+} from "lucide-react";
 import { dreamsApi } from "@/lib/api";
 import type { DreamType, Mood, DreamFormData } from "@/types";
-import { DREAM_TYPES, DREAM_TYPE_LABELS, MOOD_LABELS, MOOD_EMOJIS, getYesterdayDateString } from "@/lib/utils";
+import {
+  DREAM_TYPES,
+  DREAM_TYPE_LABELS,
+  DREAM_TYPE_ICONS,
+  MOOD_LABELS,
+  getYesterdayDateString,
+} from "@/lib/utils";
 import { VoiceRecorderButton } from "@/components/VoiceRecorder";
 
-const MOOD_OPTIONS: Mood[] = ["peaceful", "anxious", "joyful", "confusing", "scary", "neutral"];
+const MOOD_OPTIONS: Mood[] = [
+  "peaceful",
+  "joyful",
+  "neutral",
+  "confusing",
+  "anxious",
+  "scary",
+];
 
-// Simple keyword → tag suggestion map
+const MOOD_CONFIG: Record<Mood, { icon: LucideIcon; bg: string }> = {
+  peaceful: { icon: Feather, bg: "#64dfd0" },
+  joyful: { icon: Smile, bg: "#ffe082" },
+  neutral: { icon: Sparkles, bg: "#94adff" },
+  confusing: { icon: CloudRain, bg: "#8ec5ff" },
+  anxious: { icon: Zap, bg: "#ffb3c6" },
+  scary: { icon: Zap, bg: "#ff859d" },
+};
+
 const KEYWORD_TAG_MAP: Record<string, string[]> = {
   flying: ["flying", "freedom"],
   falling: ["falling"],
@@ -21,7 +62,7 @@ const KEYWORD_TAG_MAP: Record<string, string[]> = {
   fire: ["fire"],
   chase: ["chase", "running"],
   running: ["chase", "running"],
-  school: ["school"],
+  school: ["school", "exam"],
   teeth: ["teeth"],
   house: ["house"],
   family: ["family"],
@@ -47,11 +88,14 @@ interface DreamFormProps {
 
 export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
   const router = useRouter();
-  const [inputMode, setInputMode] = useState<"type" | "speak">("type");
+  const [inputMode, setInputMode] = useState<"type" | "speak">(
+    initialData?.input_method === "voice" ? "speak" : "type"
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tagInput, setTagInput] = useState("");
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
+  const [hoverRating, setHoverRating] = useState<number | null>(null);
 
   const [form, setForm] = useState<DreamFormData>(() => ({
     title: "",
@@ -115,310 +159,434 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
       }
       router.push("/journal");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to save dream. Make sure the backend is running.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to save dream. Make sure the backend is running."
+      );
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6 max-w-3xl">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Link href="/journal" className="btn-ghost py-2 px-3" aria-label="Back to journal">
-          <ArrowLeft size={18} />
-        </Link>
-        <div>
-          <h1
-            className="text-2xl font-bold"
-            style={{ fontFamily: "Quicksand, sans-serif" }}
-          >
-            {mode === "edit" ? "Edit Dream" : "Log a Dream"}
-          </h1>
-          <p className="text-sm" style={{ color: "#7781ac" }}>
-            {mode === "edit" ? "Update your dream entry" : "Capture what you remember"}
-          </p>
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-6 max-w-3xl text-[#eef6ff]"
+      style={{ fontFamily: "'Quicksand', ui-rounded, 'Nunito', sans-serif" }}
+    >
+      <style>{`
+        .cartoon-form-card {
+          border: 2.5px solid #081326;
+          box-shadow: 0 6px 0 0 #081326, inset 0 2px 0 0 rgba(255, 255, 255, 0.14);
+        }
+        .cartoon-form-input {
+          width: 100%;
+          border: 2.5px solid #081326;
+          border-radius: 1rem;
+          background: #0f2040;
+          color: #eef6ff;
+          font-weight: 600;
+          padding: 0.75rem 1rem;
+          outline: none;
+          transition: border-color 0.16s ease, box-shadow 0.16s ease;
+        }
+        .cartoon-form-input:focus {
+          border-color: #5bb8ff;
+          background: #102347;
+          box-shadow: 0 0 0 3px rgba(91, 184, 255, 0.24);
+        }
+        .cartoon-form-btn-primary {
+          background-color: #5bb8ff;
+          color: #081326;
+          border: 2.5px solid #081326;
+          box-shadow: 0 4px 0 0 #081326, inset 0 2px 0 0 rgba(255, 255, 255, 0.45);
+          transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+        }
+        .cartoon-form-btn-primary:hover:not(:disabled) {
+          background-color: #77c6ff;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 0 0 #081326, inset 0 2px 0 0 rgba(255, 255, 255, 0.55);
+        }
+        .cartoon-form-btn-primary:active:not(:disabled) {
+          transform: translateY(2px);
+          box-shadow: 0 1px 0 0 #081326;
+        }
+        .cartoon-form-btn-secondary {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.4rem;
+          white-space: nowrap;
+          background-color: #162f5c;
+          color: #eef6ff;
+          border: 2.5px solid #081326;
+          box-shadow: 0 4px 0 0 #081326, inset 0 2px 0 0 rgba(255, 255, 255, 0.14);
+          transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+        }
+        .cartoon-form-btn-secondary:hover {
+          background-color: #1f417d;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 0 0 #081326;
+        }
+        .cartoon-form-btn-secondary:active {
+          transform: translateY(2px);
+          box-shadow: 0 1px 0 0 #081326;
+        }
+      `}</style>
+
+      {/* Main Storybook Form Card */}
+      <div className="cartoon-form-card rounded-[28px] bg-[#162e59] p-6 sm:p-8 space-y-6">
+        {/* Input Mode Selector */}
+        <div className="flex items-center justify-between gap-4 flex-wrap pb-2 border-b-2 border-[#081326]/50">
+          <div>
+            <span className="block text-xs font-extrabold uppercase tracking-wider text-[#7ea4d4]">
+              Recording Style
+            </span>
+            <span className="text-sm font-bold text-white">How do you want to record?</span>
+          </div>
+
+          <div className="inline-flex rounded-2xl border-2 border-[#081326] bg-[#0e2040] p-1 shadow-[0_2px_0_0_#081326]">
+            {(["type", "speak"] as const).map((m) => {
+              const active = inputMode === m;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => {
+                    setInputMode(m);
+                    update("input_method", m === "speak" ? "voice" : "text");
+                  }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all ${
+                    active
+                      ? "bg-[#5bb8ff] text-[#081326] border-2 border-[#081326] shadow-[0_2px_0_0_#081326]"
+                      : "text-[#8cb2e0] hover:text-white border-2 border-transparent"
+                  }`}
+                >
+                  {m === "type" ? (
+                    <Type size={14} strokeWidth={2.8} />
+                  ) : (
+                    <Mic size={14} strokeWidth={2.8} />
+                  )}
+                  {m === "type" ? "Type it out" : "Speak it out"}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
 
-      {/* Input mode toggle */}
-      <div
-        className="flex rounded-xl p-1 w-fit"
-        style={{
-          background: "rgba(255,255,255,0.04)",
-          border: "1px solid rgba(255,255,255,0.08)",
-        }}
-      >
-        {(["type", "speak"] as const).map((m) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => setInputMode(m)}
-            className="flex items-center gap-2 py-2 px-4 rounded-lg text-sm transition-all"
-            style={{
-              fontFamily: "Quicksand, sans-serif",
-              fontWeight: 600,
-              background: inputMode === m ? "rgba(108,142,255,0.2)" : "transparent",
-              color: inputMode === m ? "#6c8eff" : "#7781ac",
-            }}
-          >
-            {m === "type" ? <Type size={15} /> : <Mic size={15} />}
-            {m === "type" ? "Type" : "Speak"}
-          </button>
-        ))}
-      </div>
+        {/* Title Field */}
+        <div>
+          <label htmlFor="dream-title" className="block text-sm font-extrabold text-[#cfe3fc] mb-2">
+            Dream Title <span className="text-[#ffe082]">*</span>
+          </label>
+          <input
+            id="dream-title"
+            type="text"
+            value={form.title}
+            onChange={(e) => update("title", e.target.value)}
+            className="cartoon-form-input text-base"
+            placeholder="Give this dream a memorable title…"
+            required
+          />
+        </div>
 
-      {/* Title */}
-      <div>
-        <label htmlFor="dream-title" className="block text-sm mb-2" style={{ color: "#aeb8e0" }}>
-          Dream title
-        </label>
-        <input
-          id="dream-title"
-          type="text"
-          value={form.title}
-          onChange={(e) => update("title", e.target.value)}
-          className="input-glass"
-          placeholder="Give this dream a name…"
-          required
-        />
-      </div>
+        {/* Dream Body / Voice Panel */}
+        <div>
+          <label htmlFor="dream-body" className="block text-sm font-extrabold text-[#cfe3fc] mb-2">
+            What happened in the dream? <span className="text-[#ffe082]">*</span>
+          </label>
 
-      {/* Dream body */}
-      <div>
-        <label htmlFor="dream-body" className="block text-sm mb-2" style={{ color: "#aeb8e0" }}>
-          What happened?
-        </label>
-        {inputMode === "speak" ? (
-          <div className="glass-card p-8 flex flex-col items-center gap-6">
-            <VoiceRecorderButton onTranscript={handleVoiceTranscript} />
-            {form.body && (
+          {inputMode === "speak" ? (
+            <div className="rounded-3xl border-2 border-[#081326] bg-[#0e2040] p-6 flex flex-col items-center gap-5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]">
+              <VoiceRecorderButton onTranscript={handleVoiceTranscript} />
+
               <div className="w-full">
-                <p className="text-xs mb-2" style={{ color: "#7781ac" }}>
-                  Transcript (editable):
-                </p>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-[#7ea4d4]">
+                    Live Transcript (Editable)
+                  </span>
+                  <span className="text-[11px] font-bold text-[#64dfd0]">Voice detected</span>
+                </div>
                 <textarea
                   id="dream-body-voice"
                   value={form.body}
                   onChange={(e) => handleBodyChange(e.target.value)}
-                  className="input-glass"
+                  className="cartoon-form-input text-sm leading-relaxed"
                   rows={6}
+                  placeholder="Your words will transcribe here as you speak…"
                   style={{ resize: "vertical" }}
                 />
               </div>
-            )}
-          </div>
-        ) : (
-          <textarea
-            id="dream-body"
-            value={form.body}
-            onChange={(e) => handleBodyChange(e.target.value)}
-            className="input-glass"
-            rows={8}
-            placeholder="Describe your dream in as much detail as you remember…"
-            style={{ resize: "vertical" }}
-          />
-        )}
-      </div>
-
-      {/* Row: Date + Type */}
-      <div className="grid sm:grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="dream-date" className="block text-sm mb-2" style={{ color: "#aeb8e0" }}>
-            Dream date
-          </label>
-          <input
-            id="dream-date"
-            type="date"
-            value={form.dream_date}
-            onChange={(e) => update("dream_date", e.target.value)}
-            className="input-glass"
-            required
-          />
-        </div>
-        <div>
-          <label htmlFor="dream-type" className="block text-sm mb-2" style={{ color: "#aeb8e0" }}>
-            Dream type
-          </label>
-          <select
-            id="dream-type"
-            value={form.dream_type}
-            onChange={(e) => update("dream_type", e.target.value as DreamType)}
-            className="input-glass"
-          >
-            {DREAM_TYPES.map((t) => (
-              <option key={t} value={t}>
-                {DREAM_TYPE_LABELS[t]}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Mood picker */}
-      <div>
-        <label className="block text-sm mb-3" style={{ color: "#aeb8e0" }}>
-          How did the dream feel?
-        </label>
-        <div className="flex flex-wrap gap-2">
-          {MOOD_OPTIONS.map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => update("mood", m)}
-              className={`badge badge-${m} cursor-pointer transition-all inline-flex items-center gap-1.5`}
-              style={{
-                fontSize: "0.85rem",
-                padding: "0.45rem 0.95rem",
-                opacity: form.mood === m ? 1 : 0.5,
-                transform: form.mood === m ? "scale(1.05)" : "scale(1)",
-              }}
-            >
-              <span className="text-base leading-none">{MOOD_EMOJIS[m]}</span>
-              <span>{MOOD_LABELS[m]}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Sleep quality */}
-      <div>
-        <label className="block text-sm mb-3" style={{ color: "#aeb8e0" }}>
-          Sleep quality
-        </label>
-        <div className="flex gap-2">
-          {[1, 2, 3, 4, 5].map((v) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => update("sleep_quality", form.sleep_quality === v ? null : v)}
-              aria-label={`Sleep quality ${v}`}
-            >
-              <Star
-                size={28}
-                style={{
-                  color: (form.sleep_quality ?? 0) >= v ? "#f3d98b" : "#7781ac",
-                  fill: (form.sleep_quality ?? 0) >= v ? "#f3d98b" : "transparent",
-                  transition: "all 0.15s ease",
-                }}
-              />
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Toggles */}
-      <div className="flex gap-6 flex-wrap">
-        {(
-          [
-            { key: "is_lucid", label: "Lucid dream" },
-            { key: "is_recurring", label: "Recurring dream" },
-          ] as const
-        ).map(({ key, label }) => (
-          <label key={key} className="flex items-center gap-3 cursor-pointer">
-            <span className="toggle-switch">
-              <input
-                type="checkbox"
-                checked={form[key]}
-                onChange={(e) => update(key, e.target.checked)}
-              />
-              <span className="toggle-track" />
-              <span className="toggle-thumb" />
-            </span>
-            <span className="text-sm" style={{ color: "#aeb8e0" }}>
-              {label}
-            </span>
-          </label>
-        ))}
-      </div>
-
-      {/* Tags */}
-      <div>
-        <label htmlFor="tag-input" className="block text-sm mb-2" style={{ color: "#aeb8e0" }}>
-          Tags
-        </label>
-        <div className="flex flex-wrap gap-2 mb-3">
-          {form.tags.map((tag) => (
-            <span key={tag} className="tag-chip">
-              #{tag}
-              <button type="button" onClick={() => removeTag(tag)} aria-label={`Remove tag ${tag}`}>
-                <X size={12} />
-              </button>
-            </span>
-          ))}
-        </div>
-        <div className="flex gap-2">
-          <input
-            id="tag-input"
-            type="text"
-            value={tagInput}
-            onChange={(e) => setTagInput(e.target.value)}
-            onKeyDown={handleTagInputKeyDown}
-            className="input-glass flex-1"
-            placeholder="Add tags (press Enter or comma)"
-          />
-          <button
-            type="button"
-            onClick={() => { addTag(tagInput); setTagInput(""); }}
-            className="btn-ghost py-2 px-3"
-            disabled={!tagInput.trim()}
-          >
-            <Plus size={16} />
-          </button>
-        </div>
-        {/* Suggested tags */}
-        {suggestedTags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-2">
-            <span className="text-xs" style={{ color: "#7781ac" }}>Suggested:</span>
-            {suggestedTags.map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => addTag(tag)}
-                className="tag-chip cursor-pointer"
-                style={{ opacity: 0.7, borderStyle: "dashed" }}
-              >
-                + #{tag}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {error && (
-        <p
-          className="text-sm rounded-xl p-3"
-          style={{
-            color: "#f2a6c5",
-            background: "rgba(242,166,197,0.08)",
-            border: "1px solid rgba(242,166,197,0.2)",
-          }}
-        >
-          {error}
-        </p>
-      )}
-
-      {/* Actions */}
-      <div className="flex items-center gap-3">
-        <button
-          type="submit"
-          className="btn-primary"
-          disabled={saving}
-          id="save-dream-btn"
-        >
-          {saving ? (
-            <span className="flex items-center gap-2">
-              <span className="spinner" style={{ borderTopColor: "#fff" }} /> Saving…
-            </span>
+            </div>
           ) : (
-            <span className="flex items-center gap-2">
-              <Save size={16} /> {mode === "edit" ? "Update dream" : "Save dream"}
-            </span>
+            <textarea
+              id="dream-body"
+              value={form.body}
+              onChange={(e) => handleBodyChange(e.target.value)}
+              className="cartoon-form-input text-sm leading-relaxed"
+              rows={8}
+              placeholder="Describe your dream in as much detail as you recall: colors, people, feelings, floating moments…"
+              style={{ resize: "vertical" }}
+              required
+            />
           )}
-        </button>
-        <Link href="/journal" className="btn-ghost text-sm">
-          Cancel
-        </Link>
+        </div>
+
+        {/* Date + Dream Type Row */}
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="dream-date" className="block text-sm font-extrabold text-[#cfe3fc] mb-2">
+              <span className="inline-flex items-center gap-1.5">
+                <Calendar size={14} className="text-[#64dfd0]" /> Dream Date
+              </span>
+            </label>
+            <input
+              id="dream-date"
+              type="date"
+              value={form.dream_date}
+              onChange={(e) => update("dream_date", e.target.value)}
+              className="cartoon-form-input text-sm"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="dream-type" className="block text-sm font-extrabold text-[#cfe3fc] mb-2">
+              Dream Type
+            </label>
+            <select
+              id="dream-type"
+              value={form.dream_type}
+              onChange={(e) => update("dream_type", e.target.value as DreamType)}
+              className="cartoon-form-input text-sm cursor-pointer"
+            >
+              {DREAM_TYPES.map((t) => (
+                <option key={t} value={t} className="bg-[#0e2040] text-white">
+                  {DREAM_TYPE_LABELS[t]}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Mood Picker */}
+        <div>
+          <label className="block text-sm font-extrabold text-[#cfe3fc] mb-2.5">
+            How did the dream feel?
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {MOOD_OPTIONS.map((m) => {
+              const cfg = MOOD_CONFIG[m];
+              const Icon = cfg.icon;
+              const active = form.mood === m;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => update("mood", m)}
+                  className={`inline-flex items-center gap-1.5 rounded-full border-2 border-[#081326] px-3.5 py-1.5 text-xs font-extrabold transition-transform ${
+                    active
+                      ? "scale-105 shadow-[0_3px_0_0_#081326] text-[#081326]"
+                      : "bg-[#0e2040] text-[#cfe3fc] hover:scale-102"
+                  }`}
+                  style={{ backgroundColor: active ? cfg.bg : undefined }}
+                >
+                  <Icon size={13} strokeWidth={2.6} />
+                  <span>{MOOD_LABELS[m]}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Sleep Quality */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-sm font-extrabold text-[#cfe3fc]">
+              Sleep Quality (1 - 5)
+            </label>
+            <span className="text-xs font-extrabold text-[#ffe082]">
+              {form.sleep_quality ? `${form.sleep_quality} / 5 Stars` : "Not rated"}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {[1, 2, 3, 4, 5].map((v) => {
+              const activeVal = hoverRating ?? form.sleep_quality ?? 0;
+              const isLit = activeVal >= v;
+              return (
+                <button
+                  key={v}
+                  type="button"
+                  onMouseEnter={() => setHoverRating(v)}
+                  onMouseLeave={() => setHoverRating(null)}
+                  onClick={() => update("sleep_quality", form.sleep_quality === v ? null : v)}
+                  aria-label={`Rate sleep quality ${v} of 5`}
+                  className="p-1 rounded-xl hover:scale-110 active:scale-95 transition-transform"
+                >
+                  <Star
+                    size={28}
+                    strokeWidth={2.4}
+                    style={{
+                      color: isLit ? "#ffe082" : "#244275",
+                      fill: isLit ? "#ffe082" : "transparent",
+                    }}
+                  />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Cartoon Checkbox Toggles: Lucid & Recurring */}
+        <div className="grid sm:grid-cols-2 gap-3 pt-2">
+          <label className="flex items-center gap-3 rounded-2xl border-2 border-[#081326] bg-[#0e2040] p-3 cursor-pointer hover:bg-[#12284e] transition-colors">
+            <input
+              type="checkbox"
+              checked={form.is_lucid}
+              onChange={(e) => update("is_lucid", e.target.checked)}
+              className="h-5 w-5 rounded-lg border-2 border-[#081326] accent-[#ffe082] cursor-pointer"
+            />
+            <div>
+              <span className="flex items-center gap-1.5 text-xs font-extrabold text-white">
+                <Sparkles size={13} className="text-[#ffe082]" /> Lucid Dream
+              </span>
+              <span className="block text-[11px] font-semibold text-[#8cb2e0]">
+                I was aware I was dreaming
+              </span>
+            </div>
+          </label>
+
+          <label className="flex items-center gap-3 rounded-2xl border-2 border-[#081326] bg-[#0e2040] p-3 cursor-pointer hover:bg-[#12284e] transition-colors">
+            <input
+              type="checkbox"
+              checked={form.is_recurring}
+              onChange={(e) => update("is_recurring", e.target.checked)}
+              className="h-5 w-5 rounded-lg border-2 border-[#081326] accent-[#64dfd0] cursor-pointer"
+            />
+            <div>
+              <span className="flex items-center gap-1.5 text-xs font-extrabold text-white">
+                <Repeat size={13} className="text-[#64dfd0]" /> Recurring Dream
+              </span>
+              <span className="block text-[11px] font-semibold text-[#8cb2e0]">
+                I&apos;ve experienced this before
+              </span>
+            </div>
+          </label>
+        </div>
+
+        {/* Tags Section */}
+        <div>
+          <label htmlFor="tag-input" className="block text-sm font-extrabold text-[#cfe3fc] mb-2">
+            Sticker Tags
+          </label>
+
+          {/* Active Tags */}
+          {form.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {form.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center gap-1 rounded-full border-2 border-[#081326] bg-[#1c396e] pl-3 pr-1.5 py-1 text-xs font-extrabold text-[#cfe3fc] shadow-[0_2px_0_0_#081326]"
+                >
+                  <Hash size={11} strokeWidth={3} className="text-[#64dfd0]" />
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => removeTag(tag)}
+                    aria-label={`Remove tag ${tag}`}
+                    className="flex h-5 w-5 items-center justify-center rounded-full hover:bg-white/15 text-[#ff859d]"
+                  >
+                    <X size={12} strokeWidth={3} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Tag Input */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <input
+                id="tag-input"
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleTagInputKeyDown}
+                className="cartoon-form-input h-12 text-sm"
+                placeholder="Add tags like flying, water, maze (press Enter)"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                addTag(tagInput);
+                setTagInput("");
+              }}
+              disabled={!tagInput.trim()}
+              className="cartoon-form-btn-secondary shrink-0 h-12 px-4 rounded-2xl text-xs font-extrabold disabled:opacity-50 inline-flex items-center gap-1.5 whitespace-nowrap active:translate-y-0.5"
+            >
+              <Plus size={16} strokeWidth={2.8} className="text-[#64dfd0]" />
+              <span>Add</span>
+            </button>
+          </div>
+
+          {/* Suggested Tags Cloud */}
+          {suggestedTags.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 mt-3">
+              <span className="text-xs font-bold text-[#8cb2e0]">Suggested:</span>
+              {suggestedTags.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => addTag(tag)}
+                  className="inline-flex items-center gap-1 rounded-full border-2 border-dashed border-[#5bb8ff]/60 bg-[#0e2040] px-3 py-1 text-xs font-bold text-[#5bb8ff] hover:bg-[#162e59]"
+                >
+                  <Plus size={11} strokeWidth={3} /> #{tag}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Error Alert */}
+        {error && (
+          <div
+            role="alert"
+            className="flex items-center gap-3 rounded-2xl border-2 border-[#081326] bg-[#3a2340] px-4 py-3 text-sm font-bold text-[#ffd2db]"
+          >
+            <AlertTriangle size={17} className="shrink-0 text-[#ff859d]" strokeWidth={2.5} />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* Submit Actions */}
+        <div className="flex items-center gap-3 pt-3 border-t-2 border-[#081326]/50">
+          <button
+            type="submit"
+            disabled={saving}
+            className="cartoon-form-btn-primary inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl text-sm font-extrabold disabled:opacity-60"
+          >
+            {saving ? (
+              <>
+                <Loader2 size={16} className="animate-spin" /> Saving entry…
+              </>
+            ) : (
+              <>
+                <Save size={16} strokeWidth={2.6} />
+                {mode === "edit" ? "Update Dream" : "Save to Storybook"}
+              </>
+            )}
+          </button>
+
+          <Link
+            href="/journal"
+            className="cartoon-form-btn-secondary px-5 py-3.5 rounded-2xl text-sm font-bold"
+          >
+            Cancel
+          </Link>
+        </div>
       </div>
     </form>
   );

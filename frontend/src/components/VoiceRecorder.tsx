@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { Mic, Square } from "lucide-react";
+import { Mic, Square, AlertTriangle, Sparkles } from "lucide-react";
 
-// Type-safe wrappers for the Web Speech API (not yet in TypeScript's standard lib.dom)
 type SpeechRecognitionResult = {
   readonly isFinal: boolean;
   readonly [index: number]: { transcript: string };
@@ -50,6 +49,8 @@ interface VoiceRecorderProps {
   disabled?: boolean;
 }
 
+const WAVE_BARS = [14, 26, 18, 34, 22, 30, 16];
+
 export function VoiceRecorderButton({ onTranscript, disabled }: VoiceRecorderProps) {
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +61,7 @@ export function VoiceRecorderButton({ onTranscript, disabled }: VoiceRecorderPro
 
     const SpeechRecognitionAPI = getSpeechRecognition();
     if (!SpeechRecognitionAPI) {
-      setError("Speech recognition is not supported in this browser. Try Chrome or Edge.");
+      setError("Speech recognition is not supported in this browser. Try Chrome, Edge, or Safari.");
       return;
     }
 
@@ -81,7 +82,7 @@ export function VoiceRecorderButton({ onTranscript, disabled }: VoiceRecorderPro
           interim += result[0].transcript;
         }
       }
-      onTranscript(finalTranscript + interim);
+      onTranscript((finalTranscript + interim).trimStart());
     };
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
@@ -98,9 +99,14 @@ export function VoiceRecorderButton({ onTranscript, disabled }: VoiceRecorderPro
       }
     };
 
-    recognition.start();
-    recognitionRef.current = recognition;
-    setIsListening(true);
+    try {
+      recognition.start();
+      recognitionRef.current = recognition;
+      setIsListening(true);
+    } catch {
+      setError("Could not access your microphone.");
+      setIsListening(false);
+    }
   }, [onTranscript]);
 
   const stopListening = useCallback(() => {
@@ -108,57 +114,87 @@ export function VoiceRecorderButton({ onTranscript, disabled }: VoiceRecorderPro
     setIsListening(false);
   }, []);
 
-  const bars = [12, 20, 16, 24, 14];
-
   return (
-    <div className="flex flex-col items-center gap-4">
-      <button
-        type="button"
-        onClick={isListening ? stopListening : startListening}
-        disabled={disabled}
-        aria-label={isListening ? "Stop recording" : "Start voice recording"}
-        className={`relative w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300 ${
-          isListening ? "voice-pulse" : ""
-        }`}
-        style={{
-          background: isListening
-            ? "linear-gradient(135deg, #b9a6f5, #6c8eff)"
-            : "rgba(108, 142, 255, 0.12)",
-          border: isListening
-            ? "2px solid rgba(185, 166, 245, 0.5)"
-            : "2px solid rgba(108, 142, 255, 0.3)",
-          cursor: disabled ? "not-allowed" : "pointer",
-          opacity: disabled ? 0.5 : 1,
-        }}
-      >
-        {isListening ? (
-          <Square size={32} className="text-white" />
-        ) : (
-          <Mic size={32} style={{ color: "#6c8eff" }} />
-        )}
-      </button>
+    <div
+      className="flex flex-col items-center gap-5"
+      style={{ fontFamily: "'Quicksand', ui-rounded, 'Nunito', sans-serif" }}
+    >
+      <style>{`
+        @keyframes rippleRing {
+          0% { transform: scale(0.92); opacity: 0.8; }
+          50% { transform: scale(1.16); opacity: 0.25; }
+          100% { transform: scale(0.92); opacity: 0.8; }
+        }
+        @keyframes waveBounce {
+          0%, 100% { transform: scaleY(0.4); }
+          50% { transform: scaleY(1.15); }
+        }
+      `}</style>
 
-      <div className="text-center">
-        <p
-          className="text-sm font-medium"
+      {/* Button with animated ripple */}
+      <div className="relative flex items-center justify-center">
+        {isListening && (
+          <span
+            className="pointer-events-none absolute h-32 w-32 rounded-full border-4 border-[#ff859d]"
+            style={{ animation: "rippleRing 1.6s ease-in-out infinite" }}
+            aria-hidden="true"
+          />
+        )}
+
+        <button
+          type="button"
+          onClick={isListening ? stopListening : startListening}
+          disabled={disabled}
+          aria-label={isListening ? "Stop recording dream" : "Start voice recording"}
+          className={`relative z-10 flex h-24 w-24 items-center justify-center rounded-3xl transition-transform active:translate-y-1 ${
+            isListening ? "bg-[#ff859d]" : "bg-[#5bb8ff] hover:bg-[#78c8ff]"
+          }`}
           style={{
-            fontFamily: "Quicksand, sans-serif",
-            color: isListening ? "#b9a6f5" : "#aeb8e0",
+            border: "3px solid #081326",
+            boxShadow: "0 6px 0 0 #081326, inset 0 2px 0 0 rgba(255, 255, 255, 0.4)",
+            cursor: disabled ? "not-allowed" : "pointer",
+            opacity: disabled ? 0.6 : 1,
           }}
         >
-          {isListening ? "Listening… tap to stop" : "Tap the mic to start speaking"}
-        </p>
+          {isListening ? (
+            <Square size={30} className="text-[#081326]" strokeWidth={2.8} />
+          ) : (
+            <Mic size={34} className="text-[#081326]" strokeWidth={2.6} />
+          )}
+        </button>
+      </div>
+
+      {/* Status Sticker & Equalizer */}
+      <div className="flex flex-col items-center gap-2 text-center">
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-full border-2 border-[#081326] px-4 py-1 text-xs font-extrabold shadow-[0_2px_0_0_#081326] ${
+            isListening
+              ? "bg-[#ff859d] text-[#081326]"
+              : "bg-[#0e2040] text-[#cfe3fc]"
+          }`}
+        >
+          {isListening ? (
+            <>
+              <span className="h-2 w-2 rounded-full bg-[#081326] animate-ping" />
+              Listening… tap to stop
+            </>
+          ) : (
+            <>
+              <Sparkles size={13} className="text-[#ffe082]" />
+              Tap mic to speak your dream
+            </>
+          )}
+        </span>
+
         {isListening && (
-          <div className="flex items-center justify-center gap-1 mt-2">
-            {bars.map((h, i) => (
-              <div
+          <div className="flex h-8 items-center justify-center gap-1 pt-1" aria-hidden="true">
+            {WAVE_BARS.map((height, i) => (
+              <span
                 key={i}
-                className="w-1 rounded-full"
+                className="w-1.5 rounded-full bg-[#64dfd0] border border-[#081326]"
                 style={{
-                  background: "#b9a6f5",
-                  height: `${h}px`,
-                  animation: `voicePulse ${0.4 + i * 0.1}s ease-in-out infinite alternate`,
-                  opacity: 0.8,
+                  height: `${height}px`,
+                  animation: `waveBounce ${0.5 + (i % 3) * 0.15}s ease-in-out infinite alternate`,
                 }}
               />
             ))}
@@ -166,10 +202,15 @@ export function VoiceRecorderButton({ onTranscript, disabled }: VoiceRecorderPro
         )}
       </div>
 
+      {/* Cartoon Error Speech Bubble */}
       {error && (
-        <p className="text-sm text-center" style={{ color: "#f2a6c5" }}>
-          {error}
-        </p>
+        <div
+          role="alert"
+          className="flex items-center gap-2 rounded-2xl border-2 border-[#081326] bg-[#3a2340] px-4 py-2.5 text-xs font-bold text-[#ffd2db] shadow-[0_3px_0_0_#081326]"
+        >
+          <AlertTriangle size={15} className="shrink-0 text-[#ff859d]" strokeWidth={2.5} />
+          <span>{error}</span>
+        </div>
       )}
     </div>
   );

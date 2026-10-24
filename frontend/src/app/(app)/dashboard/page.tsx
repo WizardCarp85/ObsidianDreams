@@ -418,7 +418,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div
-        className="flex flex-col gap-6 max-w-5xl pb-24 md:pb-8"
+        className="flex flex-col gap-6 w-full max-w-5xl pb-24 md:pb-8"
         style={{ fontFamily: "'Quicksand', ui-rounded, 'Nunito', sans-serif" }}
       >
         {sharedStyles}
@@ -456,7 +456,7 @@ export default function DashboardPage() {
 
   return (
     <div
-      className="flex flex-col gap-6 max-w-5xl text-[#eef6ff] pb-24 md:pb-10"
+      className="flex flex-col gap-6 w-full max-w-5xl text-[#eef6ff] pb-24 md:pb-10"
       style={{ fontFamily: "'Quicksand', ui-rounded, 'Nunito', sans-serif" }}
     >
       {sharedStyles}

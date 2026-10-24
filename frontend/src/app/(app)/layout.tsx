@@ -68,11 +68,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <>
+    <div className="flex min-h-screen">
       <Sidebar />
-      <MobileHeader />
+      <div className="flex-1 flex flex-col min-w-0">
+        <MobileHeader />
+        <main
+          className="app-content flex-1 fade-up"
+          style={{ marginLeft: 0 }}
+        >
+          {children}
+        </main>
+      </div>
       <MobileTabBar />
-      <main className="app-content fade-up">{children}</main>
-    </>
+      <style>{`
+        .app-content {
+          margin-left: 0 !important;
+        }
+      `}</style>
+    </div>
   );
 }
