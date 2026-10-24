@@ -18,6 +18,7 @@ import {
   Save,
   AlertTriangle,
   X,
+  Check,
 } from "lucide-react";
 
 function SettingSection({
@@ -71,10 +72,25 @@ export default function SettingsPage() {
   }, []);
 
   async function handleSave() {
+    const trimmed = displayName.trim();
+    if (!trimmed) {
+      return;
+    }
     setSaving(true);
     setSaved(false);
     try {
-      await profileApi.update({ display_name: displayName, timezone, theme_preference: theme });
+      const updated = await profileApi.update({
+        display_name: trimmed,
+        timezone,
+        theme_preference: theme,
+      });
+      setProfile(updated);
+      setDisplayName(updated.display_name);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("profile-updated", { detail: { display_name: updated.display_name } })
+        );
+      }
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch {
@@ -142,7 +158,9 @@ export default function SettingsPage() {
       {/* Profile */}
       <SettingSection title="Profile" icon={User}>
         <div>
-          <label className="block text-sm mb-2" style={{ color: "#aeb8e0" }}>Display name</label>
+          <label className="block text-sm mb-2" style={{ color: "#aeb8e0" }}>
+            Display name <span className="text-[#ffe082]" title="Required">*</span>
+          </label>
           <input
             id="display-name"
             type="text"
@@ -150,6 +168,8 @@ export default function SettingsPage() {
             onChange={(e) => setDisplayName(e.target.value)}
             className="input-glass"
             placeholder="Your name"
+            required
+            minLength={2}
           />
         </div>
         {profile && (
@@ -255,7 +275,7 @@ export default function SettingsPage() {
         {saving ? (
           <span className="flex items-center gap-2"><span className="spinner" /> Saving…</span>
         ) : saved ? (
-          "✓ Saved!"
+          <span className="flex items-center gap-1.5"><Check size={16} /> Saved!</span>
         ) : (
           <span className="flex items-center gap-2"><Save size={16} /> Save preferences</span>
         )}

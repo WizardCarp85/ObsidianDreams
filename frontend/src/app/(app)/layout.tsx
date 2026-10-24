@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Sidebar, MobileTabBar } from "@/components/Navigation";
+import { Sidebar, MobileTabBar, MobileHeader } from "@/components/Navigation";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -70,6 +70,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Sidebar />
+      <MobileHeader />
       <MobileTabBar />
       <main className="app-content fade-up">{children}</main>
     </>

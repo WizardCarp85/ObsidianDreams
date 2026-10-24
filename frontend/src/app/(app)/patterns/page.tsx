@@ -27,8 +27,10 @@ import {
   Tag,
   Activity,
   BookOpen,
+  Star,
+  Repeat,
 } from "lucide-react";
-import { DREAM_TYPE_LABELS, DREAM_TYPE_EMOJIS, MOOD_LABELS, MOOD_EMOJIS } from "@/lib/utils";
+import { DREAM_TYPE_LABELS, MOOD_LABELS, MOOD_EMOJIS } from "@/lib/utils";
 
 const TYPE_COLORS: Record<string, string> = {
   lucid: "#b9a6f5",
@@ -194,19 +196,21 @@ export default function PatternsPage() {
           {/* All-time stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: "Total dreams", value: data!.all_time_stats.total, icon: "💭" },
-              { label: "Lucid dreams", value: data!.all_time_stats.lucid, icon: "🌙" },
-              { label: "Recurring", value: data!.all_time_stats.recurring, icon: "🔄" },
+              { label: "Total dreams", value: data!.all_time_stats.total, icon: BookOpen },
+              { label: "Lucid dreams", value: data!.all_time_stats.lucid, icon: Moon },
+              { label: "Recurring", value: data!.all_time_stats.recurring, icon: Repeat },
               {
                 label: "Avg sleep quality",
                 value: data!.all_time_stats.avg_sleep_quality
-                  ? `${data!.all_time_stats.avg_sleep_quality.toFixed(1)} ★`
+                  ? `${data!.all_time_stats.avg_sleep_quality.toFixed(1)} / 5`
                   : "—",
-                icon: "⭐",
+                icon: Star,
               },
-            ].map(({ label, value, icon }) => (
+            ].map(({ label, value, icon: StatIcon }) => (
               <div key={label} className="glass-card p-4 text-center">
-                <div className="text-2xl mb-1">{icon}</div>
+                <div className="flex justify-center mb-1">
+                  <StatIcon size={22} className="text-[#6c8eff]" />
+                </div>
                 <div
                   className="text-2xl font-bold mb-1"
                   style={{ fontFamily: "Quicksand, sans-serif", color: "#6c8eff" }}
@@ -260,7 +264,7 @@ export default function PatternsPage() {
                   <PieChart>
                     <Pie
                       data={data!.type_distribution.map((d) => ({
-                        name: `${DREAM_TYPE_EMOJIS[d.dream_type]} ${DREAM_TYPE_LABELS[d.dream_type]}`,
+                        name: DREAM_TYPE_LABELS[d.dream_type] || d.dream_type,
                         value: d.count,
                         type: d.dream_type,
                       }))}
@@ -296,19 +300,19 @@ export default function PatternsPage() {
                 <ResponsiveContainer width="100%" height={220}>
                   <BarChart
                     data={data!.sleep_mood_correlation.map((d) => ({
-                      mood: `${MOOD_EMOJIS[d.mood]}`,
+                      mood: `${MOOD_EMOJIS[d.mood] || ""} ${MOOD_LABELS[d.mood] || d.mood}`.trim(),
                       avg_sleep: d.avg_sleep ? parseFloat(d.avg_sleep.toFixed(1)) : 0,
-                      label: MOOD_LABELS[d.mood],
+                      label: MOOD_LABELS[d.mood] || d.mood,
                     }))}
                     margin={{ top: 5, right: 10, left: -20, bottom: 5 }}
                   >
-                    <XAxis dataKey="mood" tick={{ fill: "#7781ac", fontSize: 16 }} />
+                    <XAxis dataKey="mood" tick={{ fill: "#7781ac", fontSize: 11 }} />
                     <YAxis domain={[0, 5]} tick={{ fill: "#7781ac", fontSize: 11 }} />
                     <Tooltip
                       contentStyle={TOOLTIP_STYLE}
                       formatter={(v, _, { payload }) => [
-                        `${v} ★`,
-                        `Avg sleep (${payload?.label})`,
+                        `${v} / 5`,
+                        `Avg sleep (${payload?.label || ""})`,
                       ]}
                     />
                     <Bar dataKey="avg_sleep" radius={[6, 6, 0, 0]}>
@@ -346,7 +350,7 @@ export default function PatternsPage() {
                       stroke={MOOD_COLORS[mood] || "#6c8eff"}
                       strokeWidth={2}
                       dot={false}
-                      name={`${MOOD_EMOJIS[mood]} ${MOOD_LABELS[mood]}`}
+                      name={`${MOOD_EMOJIS[mood] || ""} ${MOOD_LABELS[mood] || mood}`.trim()}
                     />
                   ))}
                   <Legend

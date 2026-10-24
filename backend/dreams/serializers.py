@@ -83,6 +83,17 @@ class InsightSerializer(serializers.ModelSerializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    display_name = serializers.CharField(
+        max_length=255,
+        required=True,
+        allow_blank=False,
+        trim_whitespace=True,
+        error_messages={
+            "blank": "Display name is required.",
+            "required": "Display name is required.",
+        },
+    )
+
     class Meta:
         model = UserProfile
         fields = [

@@ -9,11 +9,14 @@ import {
   Trash2,
   ArrowLeft,
   Star,
+  Sparkles,
+  Repeat,
+  Mic,
 } from "lucide-react";
 import Link from "next/link";
 import {
   DREAM_TYPE_LABELS,
-  DREAM_TYPE_EMOJIS,
+  DREAM_TYPE_ICONS,
   MOOD_EMOJIS,
   MOOD_LABELS,
   formatDate,
@@ -119,14 +122,31 @@ export default function DreamDetailPage() {
         <div className="flex items-center gap-3 flex-wrap text-sm" style={{ color: "#7781ac" }}>
           <span>{formatDate(dream.dream_date)}</span>
           <span>·</span>
-          <span className={`badge badge-${dream.dream_type}`}>
-            {DREAM_TYPE_EMOJIS[dream.dream_type]} {DREAM_TYPE_LABELS[dream.dream_type]}
+          {(() => {
+            const TypeIcon = DREAM_TYPE_ICONS[dream.dream_type];
+            return (
+              <span className={`badge badge-${dream.dream_type} inline-flex items-center gap-1`}>
+                {TypeIcon && <TypeIcon size={13} />}
+                <span>{DREAM_TYPE_LABELS[dream.dream_type]}</span>
+              </span>
+            );
+          })()}
+          <span className={`badge badge-${dream.mood} inline-flex items-center gap-1`}>
+            <span>{MOOD_EMOJIS[dream.mood]}</span>
+            <span>{MOOD_LABELS[dream.mood]}</span>
           </span>
-          <span className={`badge badge-${dream.mood}`}>
-            {MOOD_EMOJIS[dream.mood]} {MOOD_LABELS[dream.mood]}
-          </span>
-          {dream.is_lucid && <span className="badge badge-lucid">✨ Lucid</span>}
-          {dream.is_recurring && <span className="badge badge-recurring">🔄 Recurring</span>}
+          {dream.is_lucid && (
+            <span className="badge badge-lucid inline-flex items-center gap-1">
+              <Sparkles size={13} />
+              <span>Lucid</span>
+            </span>
+          )}
+          {dream.is_recurring && (
+            <span className="badge badge-recurring inline-flex items-center gap-1">
+              <Repeat size={13} />
+              <span>Recurring</span>
+            </span>
+          )}
         </div>
       </div>
 
@@ -164,7 +184,10 @@ export default function DreamDetailPage() {
         {dream.input_method === "voice" && (
           <div>
             <p className="text-xs mb-1" style={{ color: "#7781ac" }}>Logged via</p>
-            <span className="badge badge-normal">🎙️ Voice</span>
+            <span className="badge badge-normal inline-flex items-center gap-1">
+              <Mic size={13} />
+              <span>Voice</span>
+            </span>
           </div>
         )}
       </div>

@@ -41,18 +41,32 @@ def auth_sync(request):
     data = request.data
     supabase_id = data.get("id")
     email = data.get("email", "")
-    display_name = data.get("user_metadata", {}).get("full_name", "")
+    metadata = data.get("user_metadata", {}) or {}
+    raw_name = metadata.get("full_name") or data.get("display_name") or ""
+    display_name = raw_name.strip() if isinstance(raw_name, str) else ""
 
     if not supabase_id:
         return Response({"error": "id required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Fall back to email prefix or default if name is still empty
+    if not display_name and email:
+        display_name = email.split("@")[0].strip()
+    if not display_name:
+        display_name = "Dreamer"
 
     profile, created = UserProfile.objects.get_or_create(
         supabase_id=supabase_id,
         defaults={"email": email, "display_name": display_name},
     )
-    if not created and not profile.email:
+    updates = []
+    if not profile.email and email:
         profile.email = email
-        profile.save(update_fields=["email"])
+        updates.append("email")
+    if display_name and profile.display_name != display_name:
+        profile.display_name = display_name
+        updates.append("display_name")
+    if updates:
+        profile.save(update_fields=updates)
 
     return Response(UserProfileSerializer(profile).data, status=status.HTTP_200_OK)
 

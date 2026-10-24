@@ -6,7 +6,7 @@ import { Save, Mic, Type, Star, X, Plus, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { dreamsApi } from "@/lib/api";
 import type { DreamType, Mood, DreamFormData } from "@/types";
-import { DREAM_TYPES, DREAM_TYPE_LABELS, DREAM_TYPE_EMOJIS, MOOD_EMOJIS, MOOD_LABELS, getYesterdayDateString } from "@/lib/utils";
+import { DREAM_TYPES, DREAM_TYPE_LABELS, MOOD_LABELS, MOOD_EMOJIS, getYesterdayDateString } from "@/lib/utils";
 import { VoiceRecorderButton } from "@/components/VoiceRecorder";
 
 const MOOD_OPTIONS: Mood[] = ["peaceful", "anxious", "joyful", "confusing", "scary", "neutral"];
@@ -248,7 +248,7 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
           >
             {DREAM_TYPES.map((t) => (
               <option key={t} value={t}>
-                {DREAM_TYPE_EMOJIS[t]} {DREAM_TYPE_LABELS[t]}
+                {DREAM_TYPE_LABELS[t]}
               </option>
             ))}
           </select>
@@ -266,15 +266,16 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
               key={m}
               type="button"
               onClick={() => update("mood", m)}
-              className={`badge badge-${m} cursor-pointer transition-all`}
+              className={`badge badge-${m} cursor-pointer transition-all inline-flex items-center gap-1.5`}
               style={{
-                fontSize: "0.8rem",
-                padding: "0.4rem 0.9rem",
+                fontSize: "0.85rem",
+                padding: "0.45rem 0.95rem",
                 opacity: form.mood === m ? 1 : 0.5,
                 transform: form.mood === m ? "scale(1.05)" : "scale(1)",
               }}
             >
-              {MOOD_EMOJIS[m]} {MOOD_LABELS[m]}
+              <span className="text-base leading-none">{MOOD_EMOJIS[m]}</span>
+              <span>{MOOD_LABELS[m]}</span>
             </button>
           ))}
         </div>

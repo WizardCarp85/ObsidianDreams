@@ -32,6 +32,17 @@ export default function SignUpPage() {
     event.preventDefault();
     setError(null);
     setNotice(null);
+
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      setError("Please enter your name.");
+      return;
+    }
+    if (trimmedName.length < 2) {
+      setError("Please enter a valid name (at least 2 characters).");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -49,7 +60,7 @@ export default function SignUpPage() {
           email: email.trim(),
           password,
           options: {
-            data: { full_name: name.trim() },
+            data: { full_name: trimmedName },
           },
         });
 
@@ -78,7 +89,13 @@ export default function SignUpPage() {
       if (hasSession) {
         if (activeUser) {
           try {
-            await authApi.sync(activeUser);
+            await authApi.sync({
+              ...activeUser,
+              user_metadata: {
+                ...(activeUser.user_metadata || {}),
+                full_name: trimmedName,
+              },
+            });
           } catch {
             // Profile sync is non-fatal; Supabase authentication has succeeded.
           }
@@ -157,7 +174,7 @@ export default function SignUpPage() {
               htmlFor="signup-name"
               className="mb-2 block text-sm font-bold text-[#cfe3fc]"
             >
-              Your name <span className="font-medium text-[#8fb2de]">(optional)</span>
+              Your name <span className="text-[#ffe082]" title="Required">*</span>
             </label>
             <div className="relative">
               <UserRound
@@ -173,6 +190,8 @@ export default function SignUpPage() {
                 onChange={(event) => setName(event.target.value)}
                 className="auth-cartoon-input has-leading-icon"
                 placeholder="Luna Dreamer"
+                required
+                minLength={2}
                 autoComplete="name"
               />
             </div>

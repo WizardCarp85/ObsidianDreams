@@ -2,15 +2,17 @@
 
 import Link from "next/link";
 import { formatRelativeDate } from "@/lib/utils";
-import { DREAM_TYPE_LABELS, DREAM_TYPE_EMOJIS, MOOD_LABELS, MOOD_EMOJIS } from "@/lib/utils";
+import { DREAM_TYPE_LABELS, DREAM_TYPE_ICONS, MOOD_LABELS, MOOD_EMOJIS } from "@/lib/utils";
 import type { Dream } from "@/types";
-import { Star } from "lucide-react";
+import { Star, Sparkles, Repeat } from "lucide-react";
 
 interface DreamCardProps {
   dream: Dream;
 }
 
 export function DreamCard({ dream }: DreamCardProps) {
+  const TypeIcon = DREAM_TYPE_ICONS[dream.dream_type];
+
   return (
     <Link href={`/journal/${dream.id}`} className="dream-card">
       <div className="flex items-start justify-between gap-3 mb-2">
@@ -26,17 +28,25 @@ export function DreamCard({ dream }: DreamCardProps) {
       </div>
 
       <div className="flex items-center gap-2 mb-3 flex-wrap">
-        <span className={`badge badge-${dream.dream_type}`}>
-          {DREAM_TYPE_EMOJIS[dream.dream_type]} {DREAM_TYPE_LABELS[dream.dream_type]}
+        <span className={`badge badge-${dream.dream_type} inline-flex items-center gap-1`}>
+          {TypeIcon && <TypeIcon size={12} />}
+          <span>{DREAM_TYPE_LABELS[dream.dream_type]}</span>
         </span>
-        <span className={`badge badge-${dream.mood}`}>
-          {MOOD_EMOJIS[dream.mood]} {MOOD_LABELS[dream.mood]}
+        <span className={`badge badge-${dream.mood} inline-flex items-center gap-1`}>
+          <span>{MOOD_EMOJIS[dream.mood]}</span>
+          <span>{MOOD_LABELS[dream.mood]}</span>
         </span>
         {dream.is_lucid && (
-          <span className="badge badge-lucid">✨ Lucid</span>
+          <span className="badge badge-lucid inline-flex items-center gap-1">
+            <Sparkles size={12} />
+            <span>Lucid</span>
+          </span>
         )}
         {dream.is_recurring && (
-          <span className="badge badge-recurring">🔄 Recurring</span>
+          <span className="badge badge-recurring inline-flex items-center gap-1">
+            <Repeat size={12} />
+            <span>Recurring</span>
+          </span>
         )}
       </div>
 

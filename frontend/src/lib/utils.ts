@@ -14,13 +14,48 @@ export const DREAM_TYPE_LABELS: Record<string, string> = {
   nap: "Nap",
 };
 
+import type { LucideIcon } from "lucide-react";
+import {
+  Sparkles,
+  CloudLightning,
+  Repeat,
+  Cloud,
+  Layers,
+  Coffee,
+  Smile,
+  Zap,
+  Heart,
+  HelpCircle,
+  AlertTriangle,
+  MinusCircle,
+} from "lucide-react";
+
+export const DREAM_TYPE_ICONS: Record<string, LucideIcon> = {
+  lucid: Sparkles,
+  nightmare: CloudLightning,
+  recurring: Repeat,
+  normal: Cloud,
+  fragmented: Layers,
+  nap: Coffee,
+};
+
+export const MOOD_ICONS: Record<string, LucideIcon> = {
+  peaceful: Smile,
+  anxious: Zap,
+  joyful: Heart,
+  confusing: HelpCircle,
+  scary: AlertTriangle,
+  neutral: MinusCircle,
+};
+
+// Deprecated emoji maps maintained as empty string fallbacks
 export const DREAM_TYPE_EMOJIS: Record<string, string> = {
-  lucid: "🌙",
-  nightmare: "😰",
-  recurring: "🔄",
-  normal: "💭",
-  fragmented: "🌫️",
-  nap: "😴",
+  lucid: "",
+  nightmare: "",
+  recurring: "",
+  normal: "",
+  fragmented: "",
+  nap: "",
 };
 
 export const MOOD_LABELS: Record<string, string> = {

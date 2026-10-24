@@ -17,6 +17,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabase";
+import { profileApi } from "@/lib/api";
 import type { User } from "@supabase/supabase-js";
 
 const BRAND = { first: "Obsidian", second: "Dreams" };
@@ -114,6 +115,7 @@ function SidebarCloud({ className = "" }: { className?: string }) {
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [profileName, setProfileName] = useState<string>("");
   const [signingOut, setSigningOut] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -146,7 +148,26 @@ export function Sidebar() {
       setUser(s?.user ?? null);
     });
 
-    return () => subscription.unsubscribe();
+    profileApi
+      .get()
+      .then((p) => {
+        if (p?.display_name) setProfileName(p.display_name);
+      })
+      .catch(() => {});
+
+    function onProfileUpdated(event: Event) {
+      const custom = event as CustomEvent<{ display_name?: string }>;
+      if (custom.detail?.display_name) {
+        setProfileName(custom.detail.display_name);
+      }
+    }
+
+    window.addEventListener("profile-updated", onProfileUpdated);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener("profile-updated", onProfileUpdated);
+    };
   }, []);
 
   function toggleCollapsed() {
@@ -186,6 +207,7 @@ export function Sidebar() {
   };
 
   const displayName =
+    profileName ||
     user?.user_metadata?.full_name ||
     user?.email?.split("@")[0] ||
     "Dreamer";
@@ -462,7 +484,7 @@ export function Sidebar() {
         )}
 
         <div
-          className={`relative z-10 rounded-2xl border-[2.5px] border-[#081326] bg-[#0f2040] shadow-[0_4px_0_0_#081326,inset_0_2px_0_0_rgba(255,255,255,0.08)] ${
+          className={`group relative z-10 rounded-2xl border-[2.5px] border-[#081326] bg-[#0f2040] shadow-[0_4px_0_0_#081326,inset_0_2px_0_0_rgba(255,255,255,0.08)] ${
             collapsed ? "p-2 flex flex-col items-center gap-2" : "p-3 flex items-center gap-2.5"
           }`}
         >
@@ -483,6 +505,15 @@ export function Sidebar() {
                 {user?.email ?? "Personal sanctuary"}
               </p>
             </div>
+          )}
+
+          {collapsed && (
+            <span
+              role="tooltip"
+              className="pointer-events-none invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 whitespace-nowrap rounded-xl border-2 border-[#081326] bg-[#162e59] px-3 py-1.5 text-xs font-extrabold text-white shadow-[0_3px_0_0_#081326] z-50"
+            >
+              {displayName}
+            </span>
           )}
 
           {user ? (
@@ -646,5 +677,86 @@ export function MobileTabBar() {
         })}
       </nav>
     </div>
+  );
+}
+
+export function MobileHeader() {
+  const [user, setUser] = useState<User | null>(null);
+  const [profileName, setProfileName] = useState<string>("");
+
+  useEffect(() => {
+    const supabase = getSupabaseClient();
+    if (!supabase) return;
+
+    supabase.auth
+      .getSession()
+      .then((res: { data: { session: { user: User } | null } }) => {
+        setUser(res.data.session?.user ?? null);
+      });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event: unknown, session: unknown) => {
+      const s = session as { user: User } | null;
+      setUser(s?.user ?? null);
+    });
+
+    profileApi
+      .get()
+      .then((p) => {
+        if (p?.display_name) setProfileName(p.display_name);
+      })
+      .catch(() => {});
+
+    function onProfileUpdated(event: Event) {
+      const custom = event as CustomEvent<{ display_name?: string }>;
+      if (custom.detail?.display_name) {
+        setProfileName(custom.detail.display_name);
+      }
+    }
+
+    window.addEventListener("profile-updated", onProfileUpdated);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener("profile-updated", onProfileUpdated);
+    };
+  }, []);
+
+  const displayName =
+    profileName ||
+    user?.user_metadata?.full_name ||
+    user?.email?.split("@")[0] ||
+    "Dreamer";
+
+  const userInitial = displayName.charAt(0).toUpperCase();
+
+  return (
+    <header
+      className="md:hidden sticky top-0 z-40 flex items-center justify-between px-4 py-2.5 border-b-[2.5px] border-[#081326] bg-[#0d1d3a]/95 backdrop-blur-md shadow-[0_3px_0_0_#081326]"
+      style={{ fontFamily: "'Quicksand', ui-rounded, 'Nunito', sans-serif" }}
+    >
+      <Link href="/" className="flex items-center gap-2.5 active:scale-95 transition-transform">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-[#081326] bg-[#5bb8ff] shadow-[0_2px_0_0_#081326]">
+          <Moon size={17} className="text-[#081326]" fill="#ffe082" strokeWidth={2.5} />
+        </div>
+        <span className="text-base font-extrabold text-white">
+          Obsidian<span className="text-[#6bc2ff]">Dreams</span>
+        </span>
+      </Link>
+
+      <Link
+        href="/settings"
+        className="flex items-center gap-2 rounded-xl border-2 border-[#081326] bg-[#0f2040] px-2.5 py-1.5 shadow-[0_2px_0_0_#081326] active:translate-y-0.5 transition-transform"
+        title={`Profile: ${displayName}`}
+      >
+        <div className="flex h-6 w-6 items-center justify-center rounded-lg border-[1.5px] border-[#081326] bg-[#64dfd0] text-xs font-black text-[#081326]">
+          {userInitial}
+        </div>
+        <span className="max-w-[120px] truncate text-xs font-bold text-white">
+          {displayName}
+        </span>
+      </Link>
+    </header>
   );
 }

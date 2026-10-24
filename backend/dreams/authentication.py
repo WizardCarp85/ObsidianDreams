@@ -91,10 +91,35 @@ class SupabaseJWTAuthentication(BaseAuthentication):
 
         # Ensure a UserProfile row exists for this Supabase user.
         try:
-            UserProfile.objects.get_or_create(
-                supabase_id=user.id,
-                defaults={"email": user.email},
+            metadata = payload.get("user_metadata", {}) or {}
+            full_name = metadata.get("full_name")
+            display_name = (
+                full_name
+                or (user.email.split("@")[0] if user.email else "Dreamer")
             )
+            display_name = display_name.strip() if isinstance(display_name, str) else "Dreamer"
+            if not display_name:
+                display_name = "Dreamer"
+
+            profile, created = UserProfile.objects.get_or_create(
+                supabase_id=user.id,
+                defaults={"email": user.email, "display_name": display_name},
+            )
+            if not created:
+                updates = []
+                if not profile.email and user.email:
+                    profile.email = user.email
+                    updates.append("email")
+                if (
+                    full_name
+                    and isinstance(full_name, str)
+                    and full_name.strip()
+                    and profile.display_name != full_name.strip()
+                ):
+                    profile.display_name = full_name.strip()
+                    updates.append("display_name")
+                if updates:
+                    profile.save(update_fields=updates)
         except Exception as e:
             # If DB error occurs, still allow user instance
             print(f"[AUTH WARNING] Could not get_or_create UserProfile: {e}")
