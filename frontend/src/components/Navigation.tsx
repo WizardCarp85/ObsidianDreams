@@ -8,6 +8,7 @@ import {
   BookOpen,
   Plus,
   Sparkles,
+  User as UserIcon,
   Settings,
   Moon,
   ChevronLeft,
@@ -52,6 +53,13 @@ const NAV_ITEMS: NavItem[] = [
     shortLabel: "Patterns",
     icon: Sparkles,
     accent: "#94adff", // Periwinkle
+  },
+  {
+    href: "/profile",
+    label: "Profile",
+    shortLabel: "Profile",
+    icon: UserIcon,
+    accent: "#ff9bb0", // Starlight Pink / Dreamer
   },
   {
     href: "/settings",
@@ -489,23 +497,35 @@ export function Sidebar() {
             collapsed ? "p-2 flex flex-col items-center gap-2" : "p-3 flex items-center gap-2.5"
           }`}
         >
-          {/* User Cartoon Badge */}
-          <div
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border-2 border-[#081326] bg-[#64dfd0] text-sm font-extrabold text-[#081326] shadow-[0_2px_0_0_#081326]"
-            title={displayName}
-          >
-            {userInitial}
-          </div>
-
-          {!collapsed && (
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-extrabold text-white">
-                {displayName}
-              </p>
-              <p className="truncate text-[11px] font-semibold text-[#8cb2e0]">
-                {user?.email ?? "Personal sanctuary"}
-              </p>
-            </div>
+          {/* User Cartoon Badge & Profile Link */}
+          {collapsed ? (
+            <Link
+              href="/profile"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border-2 border-[#081326] bg-[#64dfd0] text-sm font-extrabold text-[#081326] shadow-[0_2px_0_0_#081326] hover:scale-105 active:scale-95 transition-transform"
+              title={`View Profile: ${displayName}`}
+            >
+              {userInitial}
+            </Link>
+          ) : (
+            <Link
+              href="/profile"
+              className="flex items-center gap-2.5 min-w-0 flex-1 hover:opacity-90 transition-opacity"
+              title="Open Dreamer Profile"
+            >
+              <div
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border-2 border-[#081326] bg-[#64dfd0] text-sm font-extrabold text-[#081326] shadow-[0_2px_0_0_#081326]"
+              >
+                {userInitial}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-extrabold text-white">
+                  {displayName}
+                </p>
+                <p className="truncate text-[11px] font-semibold text-[#8cb2e0]">
+                  {user?.email ?? "Personal sanctuary"}
+                </p>
+              </div>
+            </Link>
           )}
 
           {collapsed && (
@@ -747,7 +767,7 @@ export function MobileHeader() {
       </Link>
 
       <Link
-        href="/settings"
+        href="/profile"
         className="flex items-center gap-2 rounded-xl border-2 border-[#081326] bg-[#0f2040] px-2.5 py-1.5 shadow-[0_2px_0_0_#081326] active:translate-y-0.5 transition-transform"
         title={`Profile: ${displayName}`}
       >

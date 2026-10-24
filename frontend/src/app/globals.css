@@ -55,36 +55,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Light (dawn) theme override */
-[data-theme="light"] body,
-body[data-theme="light"] {
-  background-color: #f4f7ff;
-  color: #1b2340;
-}
-
-[data-theme="light"] {
-  --color-bg-base: #f4f7ff;
-  --color-bg-elevated: #ffffff;
-  --color-primary-500: #4a63e0;
-  --color-text-primary: #1b2340;
-  --color-text-secondary: #525c85;
-  --color-text-muted: #8890b0;
-  --color-border-subtle: rgba(0, 0, 0, 0.08);
-}
-
 h1, h2, h3, h4, h5, h6 {
   font-family: "Quicksand", "Poppins", sans-serif;
   color: #eaf0ff;
   line-height: 1.2;
-}
-
-[data-theme="light"] h1,
-[data-theme="light"] h2,
-[data-theme="light"] h3,
-[data-theme="light"] h4,
-[data-theme="light"] h5,
-[data-theme="light"] h6 {
-  color: #1b2340;
 }
 
 /* ============================================================
@@ -157,11 +131,6 @@ h1, h2, h3, h4, h5, h6 {
 .glass-card:hover {
   box-shadow: 0 0 40px rgba(111, 227, 217, 0.12), 0 8px 30px rgba(76, 100, 220, 0.25);
   transform: translateY(-2px);
-}
-
-[data-theme="light"] .glass-card {
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 /* ============================================================
@@ -310,21 +279,6 @@ select option {
 
 input[type="date"] {
   color-scheme: dark;
-}
-
-[data-theme="light"] .input-glass {
-  background: #fff;
-  border-color: #d0d8f0;
-  color: #1b2340;
-}
-
-[data-theme="light"] .input-glass::placeholder {
-  color: #8890b0;
-}
-
-[data-theme="light"] .input-glass:focus {
-  border-color: #4a63e0;
-  box-shadow: 0 0 0 3px rgba(74, 99, 224, 0.12);
 }
 
 /* ============================================================

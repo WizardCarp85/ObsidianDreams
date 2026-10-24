@@ -1,427 +1,1622 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { patternsApi } from "@/lib/api";
-import type { PatternsOverview } from "@/types";
 import {
-  BarChart,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ElementType,
+  type ReactNode,
+} from "react";
+import Link from "next/link";
+import {
+  Activity,
+  AlertTriangle,
+  BarChart3,
+  BookOpen,
+  CalendarDays,
+  ChevronRight,
+  CloudRain,
+  Compass,
+  Feather,
+  Hash,
+  HelpCircle,
+  Loader2,
+  Moon,
+  Plus,
+  Quote,
+  RefreshCw,
+  Repeat,
+  Smile,
+  Sparkles,
+  Star,
+  Tag,
+  TrendingUp,
+  Zap,
+} from "lucide-react";
+import {
   Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  Tooltip,
-  LineChart,
-  Line,
-  ResponsiveContainer,
-  Cell,
-  PieChart,
-  Pie,
-  Legend,
-  ScatterChart,
-  Scatter,
 } from "recharts";
-import {
-  Sparkles,
-  RefreshCw,
-  Moon,
-  TrendingUp,
-  Tag,
-  Activity,
-  BookOpen,
-  Star,
-  Repeat,
-} from "lucide-react";
-import { DREAM_TYPE_LABELS, MOOD_LABELS, MOOD_EMOJIS } from "@/lib/utils";
+import { patternsApi } from "@/lib/api";
+import type { PatternsOverview } from "@/types";
+import { DREAM_TYPE_LABELS, MOOD_LABELS } from "@/lib/utils";
 
 const TYPE_COLORS: Record<string, string> = {
-  lucid: "#b9a6f5",
-  nightmare: "#f2a6c5",
-  recurring: "#f3d98b",
-  normal: "#6c8eff",
-  fragmented: "#6fe3d9",
-  nap: "#aeb8e0",
+  normal: "#5bb8ff",
+  lucid: "#94adff",
+  nightmare: "#ff859d",
+  recurring: "#ffe082",
+  fragmented: "#64dfd0",
+  nap: "#a9c7ec",
 };
 
 const MOOD_COLORS: Record<string, string> = {
-  peaceful: "#6fe3d9",
-  anxious: "#f3d98b",
-  joyful: "#8fa8ff",
-  confusing: "#b9a6f5",
-  scary: "#f2a6c5",
-  neutral: "#aeb8e0",
+  peaceful: "#64dfd0",
+  anxious: "#ffb3c6",
+  joyful: "#ffe082",
+  confusing: "#8ec5ff",
+  scary: "#ff859d",
+  neutral: "#94adff",
 };
 
-const TOOLTIP_STYLE = {
-  background: "rgba(18,26,58,0.95)",
-  border: "1px solid rgba(255,255,255,0.1)",
-  borderRadius: "0.75rem",
-  color: "#eaf0ff",
+const TAG_COLORS = [
+  "#5bb8ff",
+  "#64dfd0",
+  "#ffe082",
+  "#94adff",
+  "#ffb3c6",
+  "#8ec5ff",
+];
+
+const TOOLTIP_STYLE: CSSProperties = {
+  backgroundColor: "#132952",
+  border: "2.5px solid #081326",
+  borderRadius: "14px",
+  boxShadow: "0 4px 0 0 #081326",
+  color: "#eef6ff",
   fontSize: "12px",
+  fontWeight: 700,
 };
 
-function SectionCard({ title, icon: Icon, children }: {
-  title: string;
-  icon: React.ElementType;
-  children: React.ReactNode;
+const LABEL_STYLE: CSSProperties = {
+  color: "#8fd0ff",
+  fontWeight: 800,
+  marginBottom: "4px",
+};
+
+const RANGE_OPTIONS = [
+  { label: "30D", longLabel: "Last 30 nights", value: 30 },
+  { label: "90D", longLabel: "Last 90 nights", value: 90 },
+  { label: "1Y", longLabel: "Last year", value: 365 },
+] as const;
+
+function getDreamTypeLabel(type: string) {
+  return (
+    (DREAM_TYPE_LABELS as Record<string, string>)[type] ||
+    type.replaceAll("_", " ")
+  );
+}
+
+function getMoodLabel(mood: string) {
+  return (
+    (MOOD_LABELS as Record<string, string>)[mood] ||
+    mood.replaceAll("_", " ")
+  );
+}
+
+function getMoodIcon(mood: string): ElementType {
+  const key = mood.toLowerCase();
+
+  if (key.includes("peace") || key.includes("calm")) return Feather;
+  if (key.includes("joy") || key.includes("happy")) return Smile;
+  if (key.includes("anx")) return Zap;
+  if (key.includes("scary") || key.includes("fear")) return CloudRain;
+  if (key.includes("confus")) return HelpCircle;
+
+  return Sparkles;
+}
+
+function CartoonSparkle({
+  size = 14,
+  color = "#ffe082",
+  className = "",
+}: {
+  size?: number;
+  color?: string;
+  className?: string;
 }) {
   return (
-    <div className="glass-card p-6">
-      <div className="flex items-center gap-2 mb-5">
-        <Icon size={18} style={{ color: "#6c8eff" }} />
-        <h2
-          className="font-semibold text-lg"
-          style={{ fontFamily: "Quicksand, sans-serif", color: "#eaf0ff" }}
-        >
-          {title}
-        </h2>
-      </div>
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      aria-hidden="true"
+    >
+      <path
+        d="M12 2C12.7 7.6 16.4 11.3 22 12C16.4 12.7 12.7 16.4 12 22C11.3 16.4 7.6 12.7 2 12C7.6 11.3 11.3 7.6 12 2Z"
+        fill={color}
+        stroke="#081326"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function CartoonCloud({
+  fill = "#1c3c73",
+  className = "",
+}: {
+  fill?: string;
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 220 90"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
+      <path
+        d="M28 82H190C203.255 82 214 71.2548 214 58C214 45.792 204.88 35.7145 193.079 34.2016C189.261 18.0273 174.725 6 157.4 6C143.829 6 131.954 13.386 125.605 24.3374C119.994 19.7544 112.833 17 105 17C88.2355 17 74.4776 29.6691 72.6977 45.9597C68.8312 43.4557 64.2227 42 59.2727 42C45.315 42 34 53.315 34 67.2727C34 68.1986 34.0497 69.1128 34.1466 70.0131C23.5499 70.7222 15 74.5 15 78.5C15 80.9853 20.8203 82 28 82Z"
+        fill={fill}
+        stroke="#081326"
+        strokeWidth="4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M135 22C141 14 149 11 158 11C170 11 181 18 186 29"
+        stroke="rgba(255,255,255,0.18)"
+        strokeWidth="3.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function PatternsStyles() {
+  return (
+    <style>{`
+      .pattern-card {
+        border: 2.5px solid #081326;
+        box-shadow:
+          0 6px 0 0 #081326,
+          inset 0 2px 0 0 rgba(255, 255, 255, 0.14);
+      }
+
+      .pattern-lift {
+        transition:
+          transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+          box-shadow 0.18s ease;
+      }
+
+      .pattern-lift:hover {
+        transform: translateY(-4px);
+        box-shadow:
+          0 10px 0 0 #081326,
+          inset 0 2px 0 0 rgba(255, 255, 255, 0.22);
+      }
+
+      .pattern-btn-primary,
+      .pattern-btn-secondary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border: 2.5px solid #081326;
+        font-weight: 800;
+        transition:
+          transform 0.15s ease,
+          box-shadow 0.15s ease,
+          background-color 0.15s ease;
+      }
+
+      .pattern-btn-primary {
+        background: #5bb8ff;
+        color: #081326;
+        box-shadow:
+          0 4px 0 0 #081326,
+          inset 0 2px 0 0 rgba(255, 255, 255, 0.45);
+      }
+
+      .pattern-btn-primary:hover:not(:disabled) {
+        background: #77c6ff;
+        transform: translateY(-2px);
+        box-shadow:
+          0 6px 0 0 #081326,
+          inset 0 2px 0 0 rgba(255, 255, 255, 0.55);
+      }
+
+      .pattern-btn-secondary {
+        background: #162f5c;
+        color: #eef6ff;
+        box-shadow:
+          0 4px 0 0 #081326,
+          inset 0 2px 0 0 rgba(255, 255, 255, 0.14);
+      }
+
+      .pattern-btn-secondary:hover:not(:disabled) {
+        background: #1f417d;
+        transform: translateY(-2px);
+        box-shadow:
+          0 6px 0 0 #081326,
+          inset 0 2px 0 0 rgba(255, 255, 255, 0.22);
+      }
+
+      .pattern-btn-primary:active:not(:disabled),
+      .pattern-btn-secondary:active:not(:disabled) {
+        transform: translateY(2px);
+        box-shadow: 0 1px 0 0 #081326;
+      }
+
+      .pattern-btn-primary:disabled,
+      .pattern-btn-secondary:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+
+      .pattern-btn-primary:focus-visible,
+      .pattern-btn-secondary:focus-visible,
+      .pattern-period:focus-visible {
+        outline: 3px solid #ffe082;
+        outline-offset: 2px;
+      }
+
+      .pattern-period {
+        border: 2px solid transparent;
+        transition:
+          background-color 0.15s ease,
+          border-color 0.15s ease,
+          color 0.15s ease,
+          transform 0.15s ease;
+      }
+
+      .pattern-period:hover:not(:disabled) {
+        color: #ffffff;
+        transform: translateY(-1px);
+      }
+
+      .pattern-period.is-active {
+        border-color: #081326;
+        background: #5bb8ff;
+        color: #081326;
+        box-shadow: 0 2px 0 0 #081326;
+      }
+
+      @keyframes patternFloat {
+        0%, 100% { transform: translateY(0) rotate(-2deg); }
+        50% { transform: translateY(-8px) rotate(2deg); }
+      }
+
+      @keyframes patternTwinkle {
+        0%, 100% { opacity: 0.45; transform: scale(0.88); }
+        50% { opacity: 1; transform: scale(1.12); }
+      }
+
+      @keyframes patternPop {
+        from { opacity: 0; transform: translateY(8px) scale(0.96); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+
+      .pattern-float {
+        animation: patternFloat 6s ease-in-out infinite;
+      }
+
+      .pattern-twinkle {
+        animation: patternTwinkle 3s ease-in-out infinite;
+      }
+
+      .pattern-pop {
+        animation: patternPop 0.25s ease-out;
+      }
+
+      .pattern-chart .recharts-surface {
+        overflow: visible;
+      }
+
+      .pattern-chart .recharts-layer:focus,
+      .pattern-chart .recharts-sector:focus {
+        outline: none;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .pattern-lift,
+        .pattern-btn-primary,
+        .pattern-btn-secondary,
+        .pattern-period,
+        .pattern-float,
+        .pattern-twinkle,
+        .pattern-pop {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+    `}</style>
+  );
+}
+
+function SectionCard({
+  title,
+  subtitle,
+  icon: Icon,
+  accent = "#5bb8ff",
+  className = "",
+  action,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  icon: ElementType;
+  accent?: string;
+  className?: string;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section
+      className={`pattern-card rounded-3xl bg-[#152d58] p-5 sm:p-6 ${className}`}
+    >
+      <header className="mb-5 flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border-[2.5px] border-[#081326] shadow-[0_3px_0_0_#081326]"
+            style={{ backgroundColor: accent }}
+          >
+            <Icon size={20} className="text-[#081326]" strokeWidth={2.5} />
+          </span>
+
+          <div>
+            <h2 className="text-lg font-extrabold leading-tight text-white">
+              {title}
+            </h2>
+            {subtitle && (
+              <p className="mt-1 text-xs font-semibold text-[#8fb2de]">
+                {subtitle}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {action}
+      </header>
+
       {children}
+    </section>
+  );
+}
+
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  note,
+  color,
+  surface,
+}: {
+  icon: ElementType;
+  label: string;
+  value: string | number;
+  note: string;
+  color: string;
+  surface: string;
+}) {
+  return (
+    <div
+      className="pattern-card pattern-lift relative min-w-0 overflow-hidden rounded-3xl p-5"
+      style={{ backgroundColor: surface }}
+    >
+      <Icon
+        size={76}
+        className="pointer-events-none absolute -bottom-4 -right-4 -rotate-12 text-white/[0.04]"
+        aria-hidden="true"
+      />
+
+      <div className="relative z-10 flex items-start justify-between gap-2">
+        <span
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border-[2.5px] border-[#081326] shadow-[0_3px_0_0_#081326]"
+          style={{ backgroundColor: color }}
+        >
+          <Icon size={20} className="text-[#081326]" strokeWidth={2.5} />
+        </span>
+
+        <span className="rounded-full border-2 border-[#081326] bg-[#0e2040] px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[#9bc0ed]">
+          {label}
+        </span>
+      </div>
+
+      <div className="relative z-10 mt-5">
+        <p className="truncate text-2xl font-extrabold tracking-tight text-white [text-shadow:0_2px_0_#081326] sm:text-3xl">
+          {value}
+        </p>
+        <p className="mt-1 text-xs font-bold text-[#9bc0ed]">{note}</p>
+      </div>
+    </div>
+  );
+}
+
+function ChartEmptyState({ message }: { message: string }) {
+  return (
+    <div className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-[#2b4c81] bg-[#0e2040] p-6 text-center">
+      <span className="flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-[#081326] bg-[#1c396e] text-[#8fd0ff]">
+        <Moon size={21} fill="#ffe082" strokeWidth={2.4} />
+      </span>
+      <p className="max-w-xs text-sm font-bold text-[#8fb2de]">{message}</p>
+    </div>
+  );
+}
+
+function LoadingPage() {
+  return (
+    <div
+      className="flex max-w-6xl flex-col gap-6 pb-24 md:pb-10"
+      style={{
+        fontFamily: "'Quicksand', ui-rounded, 'Nunito', sans-serif",
+      }}
+    >
+      <PatternsStyles />
+
+      <div className="pattern-card h-64 animate-pulse rounded-[30px] bg-[#162e59] p-7">
+        <div className="mb-5 h-6 w-40 rounded-full bg-white/10" />
+        <div className="mb-3 h-10 w-80 max-w-full rounded-xl bg-white/15" />
+        <div className="mb-7 h-4 w-96 max-w-full rounded bg-white/10" />
+        <div className="flex gap-3">
+          <div className="h-12 w-36 rounded-2xl bg-[#5bb8ff]/30" />
+          <div className="h-12 w-32 rounded-2xl bg-white/10" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {[0, 1, 2, 3].map((item) => (
+          <div
+            key={item}
+            className="pattern-card h-40 animate-pulse rounded-3xl bg-[#152c57] p-5"
+          >
+            <div className="mb-6 h-11 w-11 rounded-2xl bg-white/10" />
+            <div className="mb-2 h-8 w-20 rounded-lg bg-white/15" />
+            <div className="h-3 w-28 rounded bg-white/10" />
+          </div>
+        ))}
+      </div>
+
+      <div className="pattern-card h-56 animate-pulse rounded-3xl bg-[#152c57]" />
+
+      <div className="grid gap-5 md:grid-cols-2">
+        <div className="pattern-card h-80 animate-pulse rounded-3xl bg-[#152c57]" />
+        <div className="pattern-card h-80 animate-pulse rounded-3xl bg-[#152c57]" />
+      </div>
     </div>
   );
 }
 
 export default function PatternsPage() {
   const [data, setData] = useState<PatternsOverview | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const [insightLoading, setInsightLoading] = useState(false);
   const [insightText, setInsightText] = useState<string | null>(null);
-  const [days, setDays] = useState(90);
+  const [insightError, setInsightError] = useState<string | null>(null);
 
-  async function loadData(d = days) {
-    setLoading(true);
-    try {
-      const res = await patternsApi.overview(d);
-      setData(res);
-    } catch {
-      // Show empty state
-    } finally {
-      setLoading(false);
-    }
-  }
+  const [days, setDays] = useState(90);
+  const requestIdRef = useRef(0);
+
+  const loadData = useCallback(
+    async (period: number, isInitialRequest = false) => {
+      const requestId = ++requestIdRef.current;
+
+      if (isInitialRequest) {
+        setInitialLoading(true);
+      } else {
+        setRefreshing(true);
+      }
+
+      setError(null);
+
+      try {
+        const result = await patternsApi.overview(period);
+
+        if (requestId === requestIdRef.current) {
+          setData(result);
+        }
+      } catch {
+        if (requestId === requestIdRef.current) {
+          setError(
+            "Could not load your pattern map. Check that the backend is running and try again."
+          );
+        }
+      } finally {
+        if (requestId === requestIdRef.current) {
+          setInitialLoading(false);
+          setRefreshing(false);
+        }
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    void loadData(90, true);
+  }, [loadData]);
 
   async function generateInsight() {
     setInsightLoading(true);
+    setInsightError(null);
+
     try {
       const insight = await patternsApi.generateInsight();
       setInsightText(insight.summary_text);
     } catch {
-      setInsightText("Could not generate insight. Make sure the backend is running and your OpenAI key is configured.");
+      setInsightError(
+        "The insight could not be generated. Make sure the backend and your AI configuration are available."
+      );
     } finally {
       setInsightLoading(false);
     }
   }
 
-  useEffect(() => { loadData(); }, []);
+  function changeRange(value: number) {
+    if (refreshing || value === days) return;
 
-  // Process mood over time into time-series for line chart
-  const moodTimeline = (() => {
-    if (!data?.mood_over_time) return [];
-    const byDate: Record<string, Record<string, number>> = {};
-    for (const item of data.mood_over_time) {
-      if (!byDate[item.dream_date]) byDate[item.dream_date] = {};
-      byDate[item.dream_date][item.mood] = (byDate[item.dream_date][item.mood] || 0) + item.count;
-    }
-    return Object.entries(byDate)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, moods]) => ({ date, ...moods }));
-  })();
-
-  const DOMINANT_MOODS = [...new Set(data?.mood_over_time?.map((m) => m.mood) ?? [])].slice(0, 4);
-
-  if (loading) {
-    return (
-      <div className="flex flex-col gap-6 max-w-5xl">
-        <h1 className="text-3xl font-bold" style={{ fontFamily: "Quicksand, sans-serif" }}>
-          Patterns & Insights
-        </h1>
-        <div className="grid md:grid-cols-2 gap-6">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="glass-card p-6 animate-pulse h-48" />
-          ))}
-        </div>
-      </div>
-    );
+    setDays(value);
+    void loadData(value);
   }
 
-  const noData = !data || data.all_time_stats.total === 0;
+  const typeChartData = useMemo(() => {
+    if (!data?.type_distribution) return [];
+
+    return data.type_distribution
+      .map((item) => ({
+        name: getDreamTypeLabel(item.dream_type),
+        value: item.count,
+        type: item.dream_type,
+        color: TYPE_COLORS[item.dream_type] || "#5bb8ff",
+      }))
+      .sort((a, b) => b.value - a.value);
+  }, [data?.type_distribution]);
+
+  const periodDreamCount = useMemo(
+    () => typeChartData.reduce((sum, item) => sum + item.value, 0),
+    [typeChartData]
+  );
+
+  const sleepMoodData = useMemo(() => {
+    if (!data?.sleep_mood_correlation) return [];
+
+    return data.sleep_mood_correlation.map((item) => ({
+      mood: item.mood,
+      label: getMoodLabel(item.mood),
+      average: item.avg_sleep
+        ? Number(Number(item.avg_sleep).toFixed(1))
+        : 0,
+      color: MOOD_COLORS[item.mood] || "#5bb8ff",
+    }));
+  }, [data?.sleep_mood_correlation]);
+
+  const moodAnalysis = useMemo(() => {
+    if (!data?.mood_over_time) {
+      return {
+        timeline: [] as Array<Record<string, string | number>>,
+        dominantMoods: [] as string[],
+        topMood: null as string | null,
+      };
+    }
+
+    const dateMap: Record<string, Record<string, number>> = {};
+    const moodTotals: Record<string, number> = {};
+
+    for (const item of data.mood_over_time) {
+      if (!dateMap[item.dream_date]) {
+        dateMap[item.dream_date] = {};
+      }
+
+      dateMap[item.dream_date][item.mood] =
+        (dateMap[item.dream_date][item.mood] || 0) + item.count;
+
+      moodTotals[item.mood] =
+        (moodTotals[item.mood] || 0) + item.count;
+    }
+
+    const dominantMoods = Object.entries(moodTotals)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 4)
+      .map(([mood]) => mood);
+
+    const timeline = Object.entries(dateMap)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, moods]) => {
+        const row: Record<string, string | number> = {
+          date,
+          label: date.slice(5),
+        };
+
+        for (const mood of dominantMoods) {
+          row[mood] = moods[mood] || 0;
+        }
+
+        return row;
+      });
+
+    return {
+      timeline,
+      dominantMoods,
+      topMood: dominantMoods[0] || null,
+    };
+  }, [data?.mood_over_time]);
+
+  const topType = typeChartData[0] || null;
+  const topTag = data?.top_tags?.[0] || null;
+
+  const totalDreams = data?.all_time_stats.total ?? 0;
+  const lucidDreams = data?.all_time_stats.lucid ?? 0;
+  const recurringDreams = data?.all_time_stats.recurring ?? 0;
+
+  const averageSleepValue = Number(
+    data?.all_time_stats.avg_sleep_quality ?? 0
+  );
+
+  const averageSleep = Number.isFinite(averageSleepValue) && averageSleepValue > 0
+    ? `${averageSleepValue.toFixed(1)} / 5`
+    : "—";
+
+  const lucidRate = Math.max(
+    0,
+    Math.min(100, Number(data?.lucidity_rate ?? 0))
+  );
+
+  const lucidRateLabel = Number.isInteger(lucidRate)
+    ? `${lucidRate}%`
+    : `${lucidRate.toFixed(1)}%`;
+
+  const selectedRange =
+    RANGE_OPTIONS.find((option) => option.value === days) ?? RANGE_OPTIONS[1];
+
+  if (initialLoading) {
+    return <LoadingPage />;
+  }
+
+  const noData = Boolean(data && data.all_time_stats.total === 0);
 
   return (
-    <div className="flex flex-col gap-6 max-w-5xl">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-3xl font-bold" style={{ fontFamily: "Quicksand, sans-serif" }}>
-            Patterns & Insights
-          </h1>
-          <p className="text-sm mt-1" style={{ color: "#7781ac" }}>
-            Full analytical view of your dream life
-          </p>
+    <div
+      className="flex max-w-6xl flex-col gap-6 pb-24 text-[#eef6ff] md:pb-10"
+      style={{
+        fontFamily: "'Quicksand', ui-rounded, 'Nunito', sans-serif",
+      }}
+    >
+      <PatternsStyles />
+
+      {/* Observatory hero */}
+      <section className="pattern-card relative overflow-hidden rounded-[30px] bg-gradient-to-br from-[#1d407a] via-[#162f5e] to-[#0e2040] p-6 sm:p-8">
+        <div
+          className="pointer-events-none absolute -right-20 -top-24 h-80 w-80 rounded-full blur-[70px]"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(91,184,255,0.32) 0%, transparent 70%)",
+          }}
+          aria-hidden="true"
+        />
+
+        <CartoonCloud
+          fill="#214685"
+          className="pointer-events-none absolute -bottom-7 -right-8 hidden w-64 opacity-85 sm:block"
+        />
+
+        <CartoonCloud
+          fill="#1a3769"
+          className="pointer-events-none absolute -top-9 right-52 hidden w-40 opacity-60 lg:block"
+        />
+
+        <CartoonSparkle
+          size={17}
+          color="#ffe082"
+          className="pattern-twinkle pointer-events-none absolute right-10 top-8"
+        />
+
+        <CartoonSparkle
+          size={12}
+          color="#64dfd0"
+          className="pattern-twinkle pointer-events-none absolute right-36 top-16 hidden sm:block"
+        />
+
+        <div className="relative z-10 grid items-center gap-8 lg:grid-cols-[1fr_310px]">
+          <div>
+            <span className="mb-4 inline-flex items-center gap-2 rounded-full border-2 border-[#081326] bg-[#0e2040] px-3.5 py-1.5 text-xs font-extrabold text-[#8fd0ff] shadow-[0_2px_0_0_#081326]">
+              <Compass size={14} className="text-[#64dfd0]" />
+              Dream Pattern Observatory
+            </span>
+
+            <h1 className="mb-3 text-3xl font-extrabold tracking-tight text-white [text-shadow:0_3px_0_#081326] sm:text-5xl">
+              Your dream constellation
+            </h1>
+
+            <p className="max-w-2xl text-sm font-semibold leading-relaxed text-[#bad4f7] sm:text-base">
+              Explore the moods, symbols, sleep rhythms, and dream styles
+              appearing across your private nightbook.
+            </p>
+
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <Link
+                href="/journal/new"
+                className="pattern-btn-primary rounded-2xl px-5 py-3 text-sm"
+              >
+                <span className="flex h-6 w-6 items-center justify-center rounded-lg border-2 border-[#081326] bg-[#ffe082]">
+                  <Plus size={14} strokeWidth={3} />
+                </span>
+                Log another dream
+              </Link>
+
+              <Link
+                href="/journal"
+                className="pattern-btn-secondary rounded-2xl px-5 py-3 text-sm"
+              >
+                Browse journal
+                <ChevronRight
+                  size={16}
+                  strokeWidth={2.7}
+                  className="text-[#64dfd0]"
+                />
+              </Link>
+            </div>
+          </div>
+
+          {/* Current lens panel */}
+          <div className="pattern-card relative overflow-hidden rounded-3xl bg-[#0e2040]/90 p-5">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#7ea4d4]">
+                  Current lens
+                </p>
+                <p className="mt-1 text-sm font-extrabold text-white">
+                  {selectedRange.longLabel}
+                </p>
+              </div>
+
+              <span className="pattern-float flex h-12 w-12 items-center justify-center rounded-2xl border-[2.5px] border-[#081326] bg-[#94adff] shadow-[0_3px_0_0_#081326]">
+                <Moon
+                  size={23}
+                  className="text-[#081326]"
+                  fill="#ffe082"
+                  strokeWidth={2.4}
+                />
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-2xl border-2 border-[#081326] bg-[#162f5c] p-3">
+                <p className="text-2xl font-extrabold text-white">
+                  {periodDreamCount}
+                </p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#8fb2de]">
+                  Dreams analyzed
+                </p>
+              </div>
+
+              <div className="rounded-2xl border-2 border-[#081326] bg-[#162f5c] p-3">
+                <p className="truncate text-sm font-extrabold text-[#ffe082]">
+                  {topTag ? `#${topTag.tag}` : "Quiet sky"}
+                </p>
+                <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-[#8fb2de]">
+                  Top symbol
+                </p>
+              </div>
+            </div>
+
+            {(topType || moodAnalysis.topMood) && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {topType && (
+                  <span
+                    className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#081326] px-3 py-1 text-[11px] font-extrabold text-[#081326]"
+                    style={{ backgroundColor: topType.color }}
+                  >
+                    <Moon size={11} strokeWidth={2.7} />
+                    {topType.name}
+                  </span>
+                )}
+
+                {moodAnalysis.topMood && (
+                  <span
+                    className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#081326] px-3 py-1 text-[11px] font-extrabold text-[#081326]"
+                    style={{
+                      backgroundColor:
+                        MOOD_COLORS[moodAnalysis.topMood] || "#94adff",
+                    }}
+                  >
+                    {(() => {
+                      const MoodIcon = getMoodIcon(moodAnalysis.topMood);
+                      return <MoodIcon size={11} strokeWidth={2.7} />;
+                    })()}
+                    {getMoodLabel(moodAnalysis.topMood)}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-        <div className="flex gap-2 items-center">
-          {(
-            [
-              { label: "30d", value: 30 },
-              { label: "90d", value: 90 },
-              { label: "1y", value: 365 },
-            ] as const
-          ).map(({ label, value }) => (
+
+        {/* Time controls */}
+        <div className="relative z-10 mt-7 flex flex-wrap items-center justify-between gap-3 border-t-2 border-[#081326]/50 pt-5">
+          <div className="flex items-center gap-2">
+            <CalendarDays size={15} className="text-[#64dfd0]" />
+            <span className="text-xs font-extrabold text-[#9bc0ed]">
+              Analysis period
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="inline-flex rounded-2xl border-2 border-[#081326] bg-[#0e2040] p-1 shadow-[0_2px_0_0_#081326]">
+              {RANGE_OPTIONS.map((option) => {
+                const active = days === option.value;
+
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => changeRange(option.value)}
+                    disabled={refreshing}
+                    aria-pressed={active}
+                    className={`pattern-period rounded-xl px-3.5 py-2 text-xs font-extrabold text-[#8fb2de] ${
+                      active ? "is-active" : ""
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+
             <button
-              key={value}
-              onClick={() => { setDays(value); loadData(value); }}
-              className="btn-ghost text-xs py-1 px-3"
-              style={days === value ? { color: "#6c8eff", borderColor: "#6c8eff" } : {}}
+              type="button"
+              onClick={() => void loadData(days)}
+              disabled={refreshing}
+              className="pattern-btn-secondary h-11 w-11 rounded-2xl"
+              aria-label="Refresh pattern data"
+              title="Refresh pattern data"
             >
-              {label}
+              <RefreshCw
+                size={16}
+                strokeWidth={2.6}
+                className={refreshing ? "animate-spin" : ""}
+              />
             </button>
-          ))}
-          <button onClick={() => loadData()} className="btn-ghost py-2 px-3" aria-label="Refresh">
-            <RefreshCw size={15} />
+          </div>
+        </div>
+      </section>
+
+      {/* API error */}
+      {error && (
+        <div
+          role="alert"
+          className="pattern-card flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[#352541] px-5 py-4"
+        >
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-[#081326] bg-[#ffe082] text-[#081326] shadow-[0_2px_0_0_#081326]">
+              <AlertTriangle size={18} strokeWidth={2.6} />
+            </span>
+            <p className="text-sm font-bold text-[#ffe9a8]">{error}</p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => void loadData(days)}
+            className="pattern-btn-secondary rounded-xl px-4 py-2.5 text-xs"
+          >
+            <RefreshCw size={14} />
+            Try again
           </button>
         </div>
-      </div>
+      )}
 
-      {noData ? (
-        <div className="empty-state glass-card py-20">
-          <div className="empty-state-icon">
-            <BookOpen size={36} />
-          </div>
-          <h2 className="text-xl font-semibold" style={{ fontFamily: "Quicksand, sans-serif" }}>
-            No dream data yet
-          </h2>
-          <p style={{ color: "#7781ac" }}>
-            Start logging dreams to unlock pattern analysis and AI insights.
-          </p>
-        </div>
-      ) : (
-        <>
-          {/* All-time stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { label: "Total dreams", value: data!.all_time_stats.total, icon: BookOpen },
-              { label: "Lucid dreams", value: data!.all_time_stats.lucid, icon: Moon },
-              { label: "Recurring", value: data!.all_time_stats.recurring, icon: Repeat },
-              {
-                label: "Avg sleep quality",
-                value: data!.all_time_stats.avg_sleep_quality
-                  ? `${data!.all_time_stats.avg_sleep_quality.toFixed(1)} / 5`
-                  : "—",
-                icon: Star,
-              },
-            ].map(({ label, value, icon: StatIcon }) => (
-              <div key={label} className="glass-card p-4 text-center">
-                <div className="flex justify-center mb-1">
-                  <StatIcon size={22} className="text-[#6c8eff]" />
-                </div>
-                <div
-                  className="text-2xl font-bold mb-1"
-                  style={{ fontFamily: "Quicksand, sans-serif", color: "#6c8eff" }}
-                >
-                  {value}
-                </div>
-                <div className="text-xs" style={{ color: "#7781ac" }}>{label}</div>
-              </div>
-            ))}
-          </div>
+      {/* Complete request failure */}
+      {!data && error ? (
+        <section className="pattern-card relative overflow-hidden rounded-3xl bg-[#162e59] p-10 text-center">
+          <CartoonCloud
+            fill="#20427d"
+            className="pointer-events-none absolute -bottom-8 -left-10 w-52 opacity-60"
+          />
+          <CartoonCloud
+            fill="#20427d"
+            className="pointer-events-none absolute -bottom-8 -right-10 w-52 opacity-60"
+          />
 
-          {/* AI Narrative */}
-          <div className="insight-banner">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Sparkles size={16} style={{ color: "#b9a6f5" }} />
-                <span
-                  className="font-semibold"
-                  style={{ fontFamily: "Quicksand, sans-serif", color: "#b9a6f5" }}
-                >
-                  AI Narrative Insight
-                </span>
+          <div className="relative z-10 flex flex-col items-center gap-4">
+            <span className="flex h-16 w-16 items-center justify-center rounded-3xl border-[2.5px] border-[#081326] bg-[#ffb3c6] shadow-[0_4px_0_0_#081326]">
+              <AlertTriangle
+                size={28}
+                className="text-[#081326]"
+                strokeWidth={2.5}
+              />
+            </span>
+
+            <div>
+              <h2 className="text-xl font-extrabold text-white">
+                The observatory is offline
+              </h2>
+              <p className="mx-auto mt-2 max-w-md text-sm font-semibold leading-relaxed text-[#9bc0ed]">
+                Your dream data could not be reached. Check the backend
+                connection and try opening the observatory again.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => void loadData(days)}
+              className="pattern-btn-primary rounded-2xl px-5 py-3 text-sm"
+            >
+              <RefreshCw size={16} />
+              Reopen observatory
+            </button>
+          </div>
+        </section>
+      ) : noData ? (
+        /* New user empty state */
+        <section className="pattern-card relative overflow-hidden rounded-3xl bg-[#162e59] px-6 py-14 text-center sm:px-10">
+          <CartoonCloud
+            fill="#20427d"
+            className="pointer-events-none absolute -bottom-7 -left-10 w-56 opacity-65"
+          />
+          <CartoonCloud
+            fill="#20427d"
+            className="pointer-events-none absolute -bottom-7 -right-10 w-56 opacity-65"
+          />
+          <CartoonSparkle
+            size={15}
+            color="#ffe082"
+            className="pattern-twinkle pointer-events-none absolute right-[24%] top-10"
+          />
+
+          <div className="relative z-10 flex flex-col items-center gap-4">
+            <span className="pattern-float flex h-20 w-20 items-center justify-center rounded-3xl border-[3px] border-[#081326] bg-[#5bb8ff] shadow-[0_5px_0_0_#081326]">
+              <BookOpen
+                size={34}
+                className="text-[#081326]"
+                strokeWidth={2.4}
+              />
+            </span>
+
+            <div>
+              <h2 className="text-2xl font-extrabold text-white [text-shadow:0_2px_0_#081326]">
+                Your constellation needs its first star
+              </h2>
+              <p className="mx-auto mt-2 max-w-md text-sm font-semibold leading-relaxed text-[#9bc0ed]">
+                As you record dreams, this page will reveal recurring symbols,
+                emotional rhythms, dream styles, and sleep connections.
+              </p>
+            </div>
+
+            <Link
+              href="/journal/new"
+              className="pattern-btn-primary rounded-2xl px-5 py-3 text-sm"
+            >
+              <Plus size={16} strokeWidth={2.8} />
+              Log your first dream
+            </Link>
+          </div>
+        </section>
+      ) : data ? (
+        <div
+          className={`flex flex-col gap-6 transition-opacity ${
+            refreshing ? "opacity-70" : "opacity-100"
+          }`}
+        >
+          {/* All-time bento statistics */}
+          <section>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-extrabold text-white">
+                  Nightbook at a glance
+                </h2>
+                <p className="text-xs font-bold text-[#8fb2de]">
+                  All-time collection totals
+                </p>
               </div>
+
+              <span className="rounded-full border-2 border-[#081326] bg-[#0e2040] px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[#64dfd0]">
+                Archive totals
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+              <StatCard
+                icon={BookOpen}
+                label="Archive"
+                value={totalDreams}
+                note="Dreams safely recorded"
+                color="#5bb8ff"
+                surface="#173261"
+              />
+
+              <StatCard
+                icon={Sparkles}
+                label="Lucid"
+                value={lucidDreams}
+                note={`${lucidRateLabel} of your collection`}
+                color="#94adff"
+                surface="#1a3062"
+              />
+
+              <StatCard
+                icon={Repeat}
+                label="Recurring"
+                value={recurringDreams}
+                note="Dreams that returned"
+                color="#64dfd0"
+                surface="#163460"
+              />
+
+              <StatCard
+                icon={Star}
+                label="Rest"
+                value={averageSleep}
+                note="Average sleep quality"
+                color="#ffe082"
+                surface="#193362"
+              />
+            </div>
+          </section>
+
+          {/* AI narrative spotlight */}
+          <section className="pattern-card relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#203d78] via-[#192f63] to-[#1c285c] p-6 sm:p-7">
+            <div
+              className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full blur-3xl"
+              style={{
+                background:
+                  "radial-gradient(circle, rgba(148,173,255,0.25), transparent 70%)",
+              }}
+              aria-hidden="true"
+            />
+
+            <CartoonSparkle
+              size={16}
+              color="#ffe082"
+              className="pattern-twinkle pointer-events-none absolute right-8 top-7"
+            />
+            <CartoonSparkle
+              size={11}
+              color="#64dfd0"
+              className="pattern-twinkle pointer-events-none absolute right-20 top-14"
+            />
+
+            <div className="relative z-10 grid gap-5 md:grid-cols-[1fr_auto] md:items-center">
+              <div>
+                <div className="mb-4 flex items-center gap-3">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl border-[2.5px] border-[#081326] bg-[#94adff] shadow-[0_3px_0_0_#081326]">
+                    <Sparkles
+                      size={22}
+                      className="text-[#081326]"
+                      strokeWidth={2.5}
+                    />
+                  </span>
+
+                  <div>
+                    <h2 className="text-lg font-extrabold text-white">
+                      Subconscious story reading
+                    </h2>
+                    <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#b8c8ff]">
+                      AI narrative insight
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border-2 border-[#081326] bg-[#0e2040]/95 p-4">
+                  <Quote
+                    size={20}
+                    className="mb-2 text-[#ffe082]"
+                    strokeWidth={2.5}
+                  />
+
+                  <p
+                    aria-live="polite"
+                    className="text-sm font-semibold leading-relaxed text-[#d5e6ff]"
+                  >
+                    {insightText ||
+                      "Generate a reflective summary to explore recurring themes, emotional shifts, and patterns appearing across your recent dream archive."}
+                  </p>
+                </div>
+
+                {insightError && (
+                  <p
+                    role="alert"
+                    className="mt-3 rounded-xl border-2 border-[#ff859d]/40 bg-[#ff859d]/10 px-4 py-3 text-xs font-bold text-[#ffd2db]"
+                  >
+                    {insightError}
+                  </p>
+                )}
+              </div>
+
               <button
-                onClick={generateInsight}
+                type="button"
+                onClick={() => void generateInsight()}
                 disabled={insightLoading}
-                className="btn-ghost text-xs py-1 px-3"
+                className="pattern-btn-primary rounded-2xl px-5 py-3 text-sm md:self-end"
               >
                 {insightLoading ? (
-                  <span className="flex items-center gap-2">
-                    <span className="spinner" style={{ width: 12, height: 12 }} /> Generating…
-                  </span>
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Reading patterns…
+                  </>
                 ) : (
-                  <span className="flex items-center gap-2">
-                    <RefreshCw size={13} /> Regenerate
-                  </span>
+                  <>
+                    <Sparkles size={16} strokeWidth={2.6} />
+                    {insightText ? "Refresh reading" : "Generate reading"}
+                  </>
                 )}
               </button>
             </div>
-            <p className="text-sm" style={{ color: "#aeb8e0", lineHeight: 1.8 }}>
-              {insightText ||
-                "Click Regenerate to get a personalized AI-powered narrative summary of your recent dream patterns."}
-            </p>
-          </div>
+          </section>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Dream type distribution */}
-            <SectionCard title="Dream type breakdown" icon={Moon}>
-              {data!.type_distribution.length > 0 ? (
-                <ResponsiveContainer width="100%" height={220}>
-                  <PieChart>
-                    <Pie
-                      data={data!.type_distribution.map((d) => ({
-                        name: DREAM_TYPE_LABELS[d.dream_type] || d.dream_type,
-                        value: d.count,
-                        type: d.dream_type,
-                      }))}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      innerRadius={50}
-                    >
-                      {data!.type_distribution.map((d) => (
-                        <Cell key={d.dream_type} fill={TYPE_COLORS[d.dream_type] || "#6c8eff"} />
-                      ))}
-                    </Pie>
-                    <Tooltip contentStyle={TOOLTIP_STYLE} />
-                    <Legend
-                      formatter={(value) => (
-                        <span style={{ color: "#aeb8e0", fontSize: 12 }}>{value}</span>
-                      )}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+          {/* Main chart grid */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Dream type donut */}
+            <SectionCard
+              title="Dream styles in orbit"
+              subtitle={`Distribution across ${selectedRange.longLabel.toLowerCase()}`}
+              icon={Moon}
+              accent="#94adff"
+            >
+              {typeChartData.length > 0 ? (
+                <div className="grid items-center gap-4 sm:grid-cols-[1fr_0.95fr]">
+                  <div className="pattern-chart relative h-[230px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={typeChartData}
+                          dataKey="value"
+                          nameKey="name"
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={58}
+                          outerRadius={88}
+                          paddingAngle={3}
+                          stroke="#081326"
+                          strokeWidth={2}
+                        >
+                          {typeChartData.map((item) => (
+                            <Cell
+                              key={item.type}
+                              fill={item.color}
+                            />
+                          ))}
+                        </Pie>
+
+                        <Tooltip
+                          contentStyle={TOOLTIP_STYLE}
+                          labelStyle={LABEL_STYLE}
+                          itemStyle={{ color: "#eef6ff" }}
+                          formatter={(value, name) => [
+                            `${Number(value)} ${
+                              Number(value) === 1 ? "dream" : "dreams"
+                            }`,
+                            String(name),
+                          ]}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+
+                    <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-3xl font-extrabold text-white">
+                        {periodDreamCount}
+                      </span>
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8fb2de]">
+                        Dreams
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    {typeChartData.map((item) => {
+                      const percentage =
+                        periodDreamCount > 0
+                          ? Math.round((item.value / periodDreamCount) * 100)
+                          : 0;
+
+                      return (
+                        <div
+                          key={item.type}
+                          className="flex items-center gap-3 rounded-xl border-2 border-[#081326] bg-[#0e2040] px-3 py-2"
+                        >
+                          <span
+                            className="h-4 w-4 shrink-0 rounded-md border-2 border-[#081326]"
+                            style={{ backgroundColor: item.color }}
+                          />
+
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-xs font-extrabold text-white">
+                              {item.name}
+                            </p>
+                            <p className="text-[10px] font-bold text-[#7899c2]">
+                              {item.value} logged
+                            </p>
+                          </div>
+
+                          <span className="text-xs font-extrabold text-[#8fd0ff]">
+                            {percentage}%
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               ) : (
-                <p className="text-center py-8 text-sm" style={{ color: "#7781ac" }}>
-                  No data for selected period
-                </p>
+                <ChartEmptyState message="No dream-type data appears in this period yet." />
               )}
             </SectionCard>
 
-            {/* Sleep quality vs mood */}
-            <SectionCard title="Sleep quality vs. mood" icon={TrendingUp}>
-              {data!.sleep_mood_correlation.length > 0 ? (
-                <ResponsiveContainer width="100%" height={220}>
-                  <BarChart
-                    data={data!.sleep_mood_correlation.map((d) => ({
-                      mood: `${MOOD_EMOJIS[d.mood] || ""} ${MOOD_LABELS[d.mood] || d.mood}`.trim(),
-                      avg_sleep: d.avg_sleep ? parseFloat(d.avg_sleep.toFixed(1)) : 0,
-                      label: MOOD_LABELS[d.mood] || d.mood,
-                    }))}
-                    margin={{ top: 5, right: 10, left: -20, bottom: 5 }}
+            {/* Sleep vs mood chart */}
+            <SectionCard
+              title="Rest and emotion"
+              subtitle="Average sleep quality connected to each mood"
+              icon={TrendingUp}
+              accent="#64dfd0"
+            >
+              {sleepMoodData.length > 0 ? (
+                <div className="pattern-chart rounded-2xl border-2 border-[#081326] bg-[#0e2040] px-2 pb-2 pt-4">
+                  <ResponsiveContainer width="100%" height={270}>
+                    <BarChart
+                      data={sleepMoodData}
+                      margin={{ top: 8, right: 8, left: -20, bottom: 5 }}
+                    >
+                      <CartesianGrid
+                        vertical={false}
+                        stroke="rgba(155,192,237,0.12)"
+                        strokeDasharray="4 4"
+                      />
+
+                      <XAxis
+                        dataKey="label"
+                        axisLine={false}
+                        tickLine={false}
+                        interval={0}
+                        tick={{
+                          fill: "#8fb2de",
+                          fontSize: 10,
+                          fontWeight: 700,
+                        }}
+                        tickFormatter={(value) =>
+                          String(value).length > 8
+                            ? `${String(value).slice(0, 7)}…`
+                            : String(value)
+                        }
+                      />
+
+                      <YAxis
+                        domain={[0, 5]}
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{
+                          fill: "#7899c2",
+                          fontSize: 10,
+                          fontWeight: 700,
+                        }}
+                      />
+
+                      <Tooltip
+                        contentStyle={TOOLTIP_STYLE}
+                        labelStyle={LABEL_STYLE}
+                        cursor={{ fill: "rgba(91,184,255,0.08)" }}
+                        formatter={(value) => [
+                          `${Number(value).toFixed(1)} / 5`,
+                          "Average sleep",
+                        ]}
+                      />
+
+                      <Bar
+                        dataKey="average"
+                        radius={[9, 9, 3, 3]}
+                        stroke="#081326"
+                        strokeWidth={2}
+                      >
+                        {sleepMoodData.map((item) => (
+                          <Cell
+                            key={item.mood}
+                            fill={item.color}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <ChartEmptyState message="Add sleep ratings and moods to reveal this connection." />
+              )}
+            </SectionCard>
+          </div>
+
+          {/* Mood timeline */}
+          <SectionCard
+            title="Mood constellation over time"
+            subtitle="How emotional tones rise, settle, and return"
+            icon={Activity}
+            accent="#5bb8ff"
+            action={
+              moodAnalysis.dominantMoods.length > 0 ? (
+                <div className="flex flex-wrap justify-end gap-1.5">
+                  {moodAnalysis.dominantMoods.map((mood) => {
+                    const MoodIcon = getMoodIcon(mood);
+
+                    return (
+                      <span
+                        key={mood}
+                        className="inline-flex items-center gap-1 rounded-full border-2 border-[#081326] px-2.5 py-1 text-[10px] font-extrabold text-[#081326]"
+                        style={{
+                          backgroundColor:
+                            MOOD_COLORS[mood] || "#94adff",
+                        }}
+                      >
+                        <MoodIcon size={10} strokeWidth={2.8} />
+                        {getMoodLabel(mood)}
+                      </span>
+                    );
+                  })}
+                </div>
+              ) : null
+            }
+          >
+            {moodAnalysis.timeline.length > 0 ? (
+              <div className="pattern-chart rounded-2xl border-2 border-[#081326] bg-[#0e2040] px-2 pb-2 pt-4">
+                <ResponsiveContainer width="100%" height={285}>
+                  <LineChart
+                    data={moodAnalysis.timeline}
+                    margin={{ top: 10, right: 15, left: -20, bottom: 5 }}
                   >
-                    <XAxis dataKey="mood" tick={{ fill: "#7781ac", fontSize: 11 }} />
-                    <YAxis domain={[0, 5]} tick={{ fill: "#7781ac", fontSize: 11 }} />
+                    <CartesianGrid
+                      vertical={false}
+                      stroke="rgba(155,192,237,0.12)"
+                      strokeDasharray="4 4"
+                    />
+
+                    <XAxis
+                      dataKey="label"
+                      axisLine={false}
+                      tickLine={false}
+                      minTickGap={24}
+                      tick={{
+                        fill: "#7899c2",
+                        fontSize: 10,
+                        fontWeight: 700,
+                      }}
+                    />
+
+                    <YAxis
+                      allowDecimals={false}
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{
+                        fill: "#7899c2",
+                        fontSize: 10,
+                        fontWeight: 700,
+                      }}
+                    />
+
                     <Tooltip
                       contentStyle={TOOLTIP_STYLE}
-                      formatter={(v, _, { payload }) => [
-                        `${v} / 5`,
-                        `Avg sleep (${payload?.label || ""})`,
-                      ]}
+                      labelStyle={LABEL_STYLE}
+                      cursor={{
+                        stroke: "#ffe082",
+                        strokeWidth: 2,
+                        strokeDasharray: "4 4",
+                      }}
                     />
-                    <Bar dataKey="avg_sleep" radius={[6, 6, 0, 0]}>
-                      {data!.sleep_mood_correlation.map((d) => (
-                        <Cell key={d.mood} fill={MOOD_COLORS[d.mood] || "#6c8eff"} />
-                      ))}
-                    </Bar>
-                  </BarChart>
+
+                    {moodAnalysis.dominantMoods.map((mood) => (
+                      <Line
+                        key={mood}
+                        type="monotone"
+                        dataKey={mood}
+                        name={getMoodLabel(mood)}
+                        stroke={MOOD_COLORS[mood] || "#5bb8ff"}
+                        strokeWidth={3}
+                        connectNulls
+                        dot={false}
+                        activeDot={{
+                          r: 6,
+                          fill: MOOD_COLORS[mood] || "#5bb8ff",
+                          stroke: "#081326",
+                          strokeWidth: 2.5,
+                        }}
+                      />
+                    ))}
+                  </LineChart>
                 </ResponsiveContainer>
+              </div>
+            ) : (
+              <ChartEmptyState message="Mood changes will appear here as your journal grows." />
+            )}
+          </SectionCard>
+
+          {/* Tags and lucidity */}
+          <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+            {/* Tag cloud */}
+            <SectionCard
+              title="Recurring symbols"
+              subtitle="The places, objects, and ideas returning most often"
+              icon={Tag}
+              accent="#ffe082"
+            >
+              {data.top_tags.length > 0 ? (
+                <>
+                  <div className="flex flex-wrap gap-2.5">
+                    {data.top_tags.map(({ tag, count }, index) => {
+                      const color =
+                        TAG_COLORS[index % TAG_COLORS.length];
+
+                      return (
+                        <span
+                          key={tag}
+                          className="pattern-lift inline-flex items-center gap-1.5 rounded-full border-2 border-[#081326] px-3 py-1.5 font-extrabold text-[#081326] shadow-[0_2px_0_0_#081326]"
+                          style={{
+                            backgroundColor: color,
+                            fontSize: `${Math.min(
+                              0.75 + count * 0.025,
+                              1
+                            )}rem`,
+                          }}
+                        >
+                          <Hash size={12} strokeWidth={3} />
+                          {tag}
+                          <span className="rounded-full border border-[#081326]/50 bg-white/25 px-1.5 py-0.5 text-[9px]">
+                            {count}
+                          </span>
+                        </span>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-5 rounded-2xl border-2 border-[#081326] bg-[#0e2040] p-4">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-[#081326] bg-[#64dfd0] shadow-[0_2px_0_0_#081326]">
+                        <Compass
+                          size={18}
+                          className="text-[#081326]"
+                          strokeWidth={2.6}
+                        />
+                      </span>
+
+                      <div>
+                        <p className="text-xs font-extrabold text-white">
+                          Strongest recurring symbol
+                        </p>
+                        <p className="mt-0.5 text-sm font-extrabold text-[#ffe082]">
+                          #{data.top_tags[0].tag}
+                          <span className="ml-2 text-xs font-bold text-[#8fb2de]">
+                            {data.top_tags[0].count} appearances
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </>
               ) : (
-                <p className="text-center py-8 text-sm" style={{ color: "#7781ac" }}>
-                  No data for selected period
-                </p>
+                <ChartEmptyState message="Tags from your dream entries will gather here." />
               )}
+            </SectionCard>
+
+            {/* Lucidity portal */}
+            <SectionCard
+              title="Lucidity portal"
+              subtitle="How often awareness appears inside your dreams"
+              icon={Sparkles}
+              accent="#94adff"
+            >
+              <div className="flex flex-col items-center gap-5 sm:flex-row lg:flex-col xl:flex-row">
+                <div
+                  className="relative flex h-44 w-44 shrink-0 items-center justify-center rounded-full border-[3px] border-[#081326] shadow-[0_5px_0_0_#081326]"
+                  style={{
+                    background: `conic-gradient(
+                      #94adff 0% ${lucidRate}%,
+                      #0e2040 ${lucidRate}% 100%
+                    )`,
+                  }}
+                  role="progressbar"
+                  aria-label="Lucidity rate"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.round(lucidRate)}
+                >
+                  <div className="flex h-32 w-32 flex-col items-center justify-center rounded-full border-[3px] border-[#081326] bg-[#152d58]">
+                    <Moon
+                      size={24}
+                      className="mb-1 text-[#ffe082]"
+                      fill="#ffe082"
+                      strokeWidth={2.4}
+                    />
+                    <span className="text-3xl font-extrabold text-white">
+                      {lucidRateLabel}
+                    </span>
+                    <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#8fb2de]">
+                      Lucid rate
+                    </span>
+                  </div>
+                </div>
+
+                <div className="w-full space-y-3">
+                  <div className="rounded-2xl border-2 border-[#081326] bg-[#0e2040] p-4">
+                    <p className="text-2xl font-extrabold text-[#94adff]">
+                      {lucidDreams}
+                    </p>
+                    <p className="text-xs font-bold text-[#9bc0ed]">
+                      Lucid dreams recorded
+                    </p>
+                  </div>
+
+                  <p className="text-xs font-semibold leading-relaxed text-[#8fb2de]">
+                    A lucid dream is an entry where you recognized that you were
+                    dreaming while the dream was still happening.
+                  </p>
+
+                  <Link
+                    href="/journal"
+                    className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#64dfd0] hover:text-white"
+                  >
+                    Revisit your journal
+                    <ChevronRight size={14} strokeWidth={2.8} />
+                  </Link>
+                </div>
+              </div>
             </SectionCard>
           </div>
 
-          {/* Mood over time */}
-          {moodTimeline.length > 0 && (
-            <SectionCard title="Mood over time" icon={Activity}>
-              <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={moodTimeline} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fill: "#7781ac", fontSize: 11 }}
-                    tickFormatter={(d) => d.slice(5)} // MM-DD
-                  />
-                  <YAxis tick={{ fill: "#7781ac", fontSize: 11 }} />
-                  <Tooltip contentStyle={TOOLTIP_STYLE} />
-                  {DOMINANT_MOODS.map((mood) => (
-                    <Line
-                      key={mood}
-                      type="monotone"
-                      dataKey={mood}
-                      stroke={MOOD_COLORS[mood] || "#6c8eff"}
-                      strokeWidth={2}
-                      dot={false}
-                      name={`${MOOD_EMOJIS[mood] || ""} ${MOOD_LABELS[mood] || mood}`.trim()}
-                    />
-                  ))}
-                  <Legend
-                    formatter={(v) => (
-                      <span style={{ color: "#aeb8e0", fontSize: 12 }}>{v}</span>
-                    )}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </SectionCard>
-          )}
+          {/* Bottom guidance card */}
+          <section className="pattern-card relative overflow-hidden rounded-3xl bg-[#132952] p-5 sm:p-6">
+            <CartoonSparkle
+              size={13}
+              color="#ffe082"
+              className="pointer-events-none absolute right-6 top-5"
+            />
 
-          {/* Top tags */}
-          {data!.top_tags.length > 0 && (
-            <SectionCard title="Most frequent tags" icon={Tag}>
-              <div className="flex flex-wrap gap-2">
-                {data!.top_tags.map(({ tag, count }) => (
-                  <span
-                    key={tag}
-                    className="tag-chip"
-                    style={{
-                      fontSize: `${Math.min(0.85 + count * 0.03, 1.1)}rem`,
-                      opacity: 0.6 + Math.min(count * 0.04, 0.4),
-                    }}
-                  >
-                    #{tag}
-                    <span
-                      className="ml-1"
-                      style={{ color: "#b9a6f5", fontWeight: 700, fontSize: "0.7rem" }}
-                    >
-                      {count}
-                    </span>
-                  </span>
-                ))}
-              </div>
-            </SectionCard>
-          )}
+            <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border-2 border-[#081326] bg-[#64dfd0] shadow-[0_3px_0_0_#081326]">
+                  <BarChart3
+                    size={20}
+                    className="text-[#081326]"
+                    strokeWidth={2.6}
+                  />
+                </span>
 
-          {/* Lucidity rate */}
-          <SectionCard title="Lucidity overview" icon={Moon}>
-            <div className="flex items-center gap-6">
-              <div>
-                <div
-                  className="text-5xl font-bold mb-1"
-                  style={{
-                    fontFamily: "Quicksand, sans-serif",
-                    background: "linear-gradient(90deg, #6c8eff, #b9a6f5)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                  }}
-                >
-                  {data!.lucidity_rate}%
-                </div>
-                <div className="text-sm" style={{ color: "#7781ac" }}>
-                  of dreams in this period were lucid
+                <div>
+                  <h2 className="text-sm font-extrabold text-white">
+                    Patterns become clearer with consistency
+                  </h2>
+                  <p className="mt-1 text-xs font-semibold text-[#8fb2de]">
+                    Add dream type, mood, sleep quality, and tags to make future
+                    analysis more useful.
+                  </p>
                 </div>
               </div>
-              <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
-                <div
-                  className="h-full rounded-full"
-                  style={{
-                    width: `${data!.lucidity_rate}%`,
-                    background: "linear-gradient(90deg, #6c8eff, #b9a6f5)",
-                    transition: "width 1s ease",
-                  }}
+
+              <Link
+                href="/journal/new"
+                className="pattern-btn-secondary rounded-2xl px-4 py-2.5 text-xs"
+              >
+                Add another entry
+                <ChevronRight
+                  size={14}
+                  className="text-[#64dfd0]"
+                  strokeWidth={2.8}
                 />
-              </div>
+              </Link>
             </div>
-          </SectionCard>
-        </>
-      )}
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }
