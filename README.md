@@ -21,7 +21,7 @@
 ## Project Structure
 
 ```
-obsidiandreams/
+Stardrift/
 ├── frontend/           Next.js app
 │   ├── src/
 │   │   ├── app/
@@ -39,7 +39,7 @@ obsidiandreams/
 │   └── .env.local              ← Add your Supabase keys here
 │
 ├── backend/            Django REST API
-│   ├── obsidiandreams/ Django project settings + urls
+│   ├── stardrift/      Django project settings + urls
 │   ├── dreams/         App: models, views, serializers, auth, urls
 │   ├── requirements.txt
 │   └── .env            ← Add DB URL, Supabase + OpenAI keys here

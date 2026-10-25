@@ -1,5 +1,5 @@
 """
-DRF views / viewsets for ObsidianDreams.
+DRF views / viewsets for Stardrift.
 """
 import json
 import datetime

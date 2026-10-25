@@ -1,5 +1,5 @@
 """
-DRF serializers for ObsidianDreams.
+DRF serializers for Stardrift.
 """
 from rest_framework import serializers
 from dreams.models import Dream, Tag, Insight, UserProfile

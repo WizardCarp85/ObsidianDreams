@@ -1,5 +1,5 @@
 """
-ObsidianDreams Django models.
+Stardrift Django models.
 Schema mirrors the spec in the implementation plan §6.
 """
 import uuid

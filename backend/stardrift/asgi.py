@@ -1,5 +1,5 @@
 """
-ASGI config for obsidiandreams project.
+ASGI config for Stardrift project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,7 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'obsidiandreams.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'stardrift.settings')
 
 application = get_asgi_application()
+
