@@ -6,6 +6,10 @@ import uuid
 from django.db import models
 
 
+def default_reminder_days():
+    return ["mon", "tue", "wed", "thu", "fri"]
+
+
 class UserProfile(models.Model):
     """Shadow table for Supabase auth.users."""
 
@@ -23,6 +27,44 @@ class UserProfile(models.Model):
         choices=ThemeChoice.choices,
         default=ThemeChoice.DARK,
     )
+
+    # Profile info
+    bio = models.TextField(blank=True, default="")
+    dream_intention = models.CharField(max_length=50, blank=True, default="recall")
+    recall_habit = models.CharField(max_length=50, blank=True, default="wake")
+
+    # Capture & Journal preferences
+    default_log_mode = models.CharField(max_length=10, default="text")
+    default_dream_type = models.CharField(max_length=20, default="normal")
+    default_sleep_quality = models.IntegerField(default=0)
+    voice_language = models.CharField(max_length=20, default="en-US")
+    auto_save_drafts = models.BooleanField(default=True)
+    auto_suggest_tags = models.BooleanField(default=True)
+
+    # Reminder preferences
+    reminder_enabled = models.BooleanField(default=False)
+    reminder_time = models.CharField(max_length=10, default="07:30")
+    reminder_days = models.JSONField(default=default_reminder_days, blank=True)
+    lucid_check_enabled = models.BooleanField(default=False)
+    lucid_check_interval = models.CharField(max_length=10, default="3h")
+
+    # AI & Patterns preferences
+    ai_insights_enabled = models.BooleanField(default=True)
+    ai_style = models.CharField(max_length=20, default="symbolic")
+    default_pattern_days = models.IntegerField(default=90)
+    include_nightmares_in_ai = models.BooleanField(default=True)
+
+    # Regional & Date/Time preferences
+    date_format = models.CharField(max_length=20, default="locale")
+    time_format = models.CharField(max_length=10, default="12h")
+    week_start = models.CharField(max_length=10, default="monday")
+
+    # Privacy & Vault preferences
+    blur_previews = models.BooleanField(default=False)
+    pin_lock_enabled = models.BooleanField(default=False)
+    pin_code = models.CharField(max_length=10, blank=True, default="")
+    auto_lock_minutes = models.IntegerField(default=15)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

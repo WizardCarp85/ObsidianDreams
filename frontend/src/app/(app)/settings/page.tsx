@@ -660,12 +660,40 @@ export default function SettingsPage() {
       } catch {
         // Keep defaults
       }
+
       try {
         const profile = await profileApi.get();
-        if (profile?.timezone) initial.timezone = profile.timezone;
+        if (profile) {
+          if (profile.timezone) initial.timezone = profile.timezone;
+          if (profile.default_log_mode) initial.defaultLogMode = profile.default_log_mode;
+          if (profile.default_dream_type) initial.defaultDreamType = profile.default_dream_type;
+          if (typeof profile.default_sleep_quality === "number") initial.defaultSleepQuality = profile.default_sleep_quality;
+          if (profile.voice_language) initial.voiceLanguage = profile.voice_language;
+          if (typeof profile.auto_save_drafts === "boolean") initial.autoSaveDrafts = profile.auto_save_drafts;
+          if (typeof profile.auto_suggest_tags === "boolean") initial.autoSuggestTags = profile.auto_suggest_tags;
+          if (typeof profile.reminder_enabled === "boolean") initial.reminderEnabled = profile.reminder_enabled;
+          if (profile.reminder_time) initial.reminderTime = profile.reminder_time;
+          if (Array.isArray(profile.reminder_days) && profile.reminder_days.length > 0) {
+            initial.reminderDays = profile.reminder_days;
+          }
+          if (typeof profile.lucid_check_enabled === "boolean") initial.lucidCheckEnabled = profile.lucid_check_enabled;
+          if (profile.lucid_check_interval) initial.lucidCheckInterval = profile.lucid_check_interval;
+          if (typeof profile.ai_insights_enabled === "boolean") initial.aiInsightsEnabled = profile.ai_insights_enabled;
+          if (profile.ai_style) initial.aiStyle = profile.ai_style;
+          if (typeof profile.default_pattern_days === "number") initial.defaultPatternDays = profile.default_pattern_days;
+          if (typeof profile.include_nightmares_in_ai === "boolean") initial.includeNightmaresInAi = profile.include_nightmares_in_ai;
+          if (profile.date_format) initial.dateFormat = profile.date_format;
+          if (profile.time_format) initial.timeFormat = profile.time_format;
+          if (profile.week_start) initial.weekStart = profile.week_start;
+          if (typeof profile.blur_previews === "boolean") initial.blurPreviews = profile.blur_previews;
+          if (typeof profile.pin_lock_enabled === "boolean") initial.pinLockEnabled = profile.pin_lock_enabled;
+          if (typeof profile.pin_code === "string") initial.pinCode = profile.pin_code;
+          if (typeof profile.auto_lock_minutes === "number") initial.autoLockMinutes = profile.auto_lock_minutes;
+        }
       } catch {
-        // Browser timezone remains the fallback.
+        // Fallback to local
       }
+
       if (!mounted) return;
       setSettings(initial);
       setSavedSnapshot(JSON.stringify(initial));
@@ -715,18 +743,54 @@ export default function SettingsPage() {
     setSaving(true);
     setFeedback(null);
     try {
+      // 1. Persist all settings directly to the database via API
+      const updatedProfile = await profileApi.update({
+        timezone: settings.timezone,
+        default_log_mode: settings.defaultLogMode,
+        default_dream_type: settings.defaultDreamType,
+        default_sleep_quality: settings.defaultSleepQuality,
+        voice_language: settings.voiceLanguage,
+        auto_save_drafts: settings.autoSaveDrafts,
+        auto_suggest_tags: settings.autoSuggestTags,
+        reminder_enabled: settings.reminderEnabled,
+        reminder_time: settings.reminderTime,
+        reminder_days: settings.reminderDays,
+        lucid_check_enabled: settings.lucidCheckEnabled,
+        lucid_check_interval: settings.lucidCheckInterval,
+        ai_insights_enabled: settings.aiInsightsEnabled,
+        ai_style: settings.aiStyle,
+        default_pattern_days: settings.defaultPatternDays,
+        include_nightmares_in_ai: settings.includeNightmaresInAi,
+        date_format: settings.dateFormat,
+        time_format: settings.timeFormat,
+        week_start: settings.weekStart,
+        blur_previews: settings.blurPreviews,
+        pin_lock_enabled: settings.pinLockEnabled,
+        pin_code: settings.pinCode,
+        auto_lock_minutes: settings.autoLockMinutes,
+      });
+
+      // 2. Also keep localStorage in sync for instant offline fallbacks
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
       window.localStorage.setItem("stardrift_default_log_mode", settings.defaultLogMode);
       window.localStorage.setItem("stardrift_autosave_drafts", String(settings.autoSaveDrafts));
       window.localStorage.setItem("stardrift_reminder_enabled", String(settings.reminderEnabled));
       window.localStorage.setItem("stardrift_reminder_time", settings.reminderTime);
-      await profileApi.update({ timezone: settings.timezone });
+      window.localStorage.setItem("stardrift_blur_previews", String(settings.blurPreviews));
+      window.localStorage.setItem("stardrift_pin_lock_enabled", String(settings.pinLockEnabled));
+      window.localStorage.setItem("stardrift_pin_code", settings.pinCode);
+
+      // 3. Dispatch an app-wide event so journal list, forms, and navigation update reactively
+      window.dispatchEvent(
+        new CustomEvent("settings-updated", { detail: { settings, profile: updatedProfile } })
+      );
+
       setSavedSnapshot(JSON.stringify(settings));
-      setFeedback({ type: "success", message: "Your settings have been saved." });
+      setFeedback({ type: "success", message: "Your settings have been saved to your account." });
     } catch {
       setFeedback({
         type: "error",
-        message: "Some settings could not be saved. Please check your connection and try again.",
+        message: "Some settings could not be saved to your account. Please check your connection and try again.",
       });
     } finally {
       setSaving(false);
@@ -884,6 +948,10 @@ export default function SettingsPage() {
   function clearLocalDrafts() {
     try {
       window.localStorage.removeItem("stardrift_dream_draft");
+      window.localStorage.removeItem("stardrift_draft");
+      window.sessionStorage?.removeItem("stardrift_dream_draft");
+      window.sessionStorage?.removeItem("stardrift_draft");
+      window.dispatchEvent(new CustomEvent("draft-cleared"));
       setFeedback({ type: "success", message: "Local unfinished dream drafts were cleared." });
     } catch {
       setFeedback({ type: "error", message: "Could not clear local draft storage." });

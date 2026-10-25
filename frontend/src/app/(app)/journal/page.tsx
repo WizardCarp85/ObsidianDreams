@@ -6,8 +6,8 @@ import {
   Search, SlidersHorizontal, Plus, X, BookOpen, Mic, Repeat,
   Sparkles, ChevronRight, Moon, Loader2, Hash,
 } from "lucide-react";
-import { dreamsApi } from "@/lib/api";
-import type { Dream } from "@/types";
+import { dreamsApi, profileApi } from "@/lib/api";
+import type { DateFormat, Dream } from "@/types";
 import {
   DREAM_TYPES, MOOD_TYPES, DREAM_TYPE_LABELS, DREAM_TYPE_ICONS,
   MOOD_LABELS, formatRelativeDate,
@@ -34,7 +34,15 @@ function DreamSkeleton() {
   );
 }
 
-function DreamStoryCard({ dream }: { dream: Dream }) {
+function DreamStoryCard({
+  dream,
+  blurPreviews = false,
+  dateFormat,
+}: {
+  dream: Dream;
+  blurPreviews?: boolean;
+  dateFormat?: DateFormat;
+}) {
   const TypeIcon = DREAM_TYPE_ICONS[dream.dream_type];
   const { icon: MoodIcon, bg: moodBg } = getMoodStickerStyle(dream.mood);
   const preview = (dream as unknown as { excerpt?: string }).excerpt || dream.body || "";
@@ -52,13 +60,18 @@ function DreamStoryCard({ dream }: { dream: Dream }) {
             : <Moon size={18} className="text-[#081326]" fill="#ffe082" strokeWidth={2.4} />}
         </span>
         <span className="rounded-full border-2 border-[#081326] bg-[#0e2040] px-3 py-1 text-[11px] font-extrabold text-[#9bc0ed]">
-          {formatRelativeDate(dream.dream_date)}
+          {formatRelativeDate(dream.dream_date, dateFormat)}
         </span>
       </div>
 
       <div className="relative z-10">
         <h3 className="line-clamp-1 text-base font-extrabold text-white">{dream.title || "Untitled Dream"}</h3>
-        <p className="mt-1.5 line-clamp-2 text-xs font-medium leading-relaxed text-[#b8d2f4]">
+        <p
+          className={`mt-1.5 line-clamp-2 text-xs font-medium leading-relaxed text-[#b8d2f4] transition-all duration-200 ${
+            blurPreviews ? "blur-[5px] select-none group-hover:blur-none" : ""
+          }`}
+          title={blurPreviews ? "Hover to reveal preview" : undefined}
+        >
           {preview || "No description recorded for this entry yet."}
         </p>
       </div>
@@ -149,6 +162,35 @@ export default function JournalPage() {
       setLoadingMore(false);
     }
   }, [debouncedQ, typeFilter, moodFilter]);
+
+  const [blurPreviews, setBlurPreviews] = useState(false);
+  const [dateFormat, setDateFormat] = useState<DateFormat>("locale");
+
+  useEffect(() => {
+    async function checkPreferences() {
+      try {
+        const pr = await profileApi.get();
+        if (typeof pr?.blur_previews === "boolean") setBlurPreviews(pr.blur_previews);
+        else if (typeof pr?.blurPreviews === "boolean") setBlurPreviews(pr.blurPreviews);
+        else setBlurPreviews(window.localStorage.getItem("stardrift_blur_previews") === "true");
+
+        const df = (pr?.date_format || pr?.dateFormat) as DateFormat | undefined;
+        if (df) setDateFormat(df);
+      } catch {
+        setBlurPreviews(window.localStorage.getItem("stardrift_blur_previews") === "true");
+      }
+    }
+    void checkPreferences();
+
+    function onSettingsUpdate(e: Event) {
+      const customEvent = e as CustomEvent;
+      if (typeof customEvent.detail?.settings?.blurPreviews === "boolean") {
+        setBlurPreviews(customEvent.detail.settings.blurPreviews);
+      }
+    }
+    window.addEventListener("settings-updated", onSettingsUpdate);
+    return () => window.removeEventListener("settings-updated", onSettingsUpdate);
+  }, []);
 
   useEffect(() => { load(1); }, [load]);
 
@@ -317,7 +359,9 @@ export default function JournalPage() {
         ) : (
           <>
             <div className="grid w-full gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {dreams.map((d) => <DreamStoryCard key={d.id} dream={d} />)}
+              {dreams.map((d) => (
+                <DreamStoryCard key={d.id} dream={d} blurPreviews={blurPreviews} dateFormat={dateFormat} />
+              ))}
               {loadingMore && [...Array(3)].map((_, i) => <DreamSkeleton key={`s-${i}`} />)}
             </div>
 

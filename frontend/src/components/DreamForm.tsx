@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -24,7 +24,7 @@ import {
   Check,
   type LucideIcon,
 } from "lucide-react";
-import { dreamsApi } from "@/lib/api";
+import { dreamsApi, profileApi } from "@/lib/api";
 import type { DreamType, Mood, DreamFormData } from "@/types";
 import {
   DREAM_TYPE_LABELS,
@@ -97,6 +97,12 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [hoverRating, setHoverRating] = useState<number | null>(null);
 
+  const [autoSuggestEnabled, setAutoSuggestEnabled] = useState(true);
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
+  const [voiceLanguage, setVoiceLanguage] = useState("en-US");
+  const [draftRestored, setDraftRestored] = useState(false);
+  const initializedFromSettingsRef = useRef(false);
+
   const [form, setForm] = useState<DreamFormData>(() => ({
     title: "",
     body: "",
@@ -115,10 +121,109 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  useEffect(() => {
+    if (mode !== "new" || initializedFromSettingsRef.current) return;
+    initializedFromSettingsRef.current = true;
+
+    async function applyUserSettings() {
+      try {
+        const profile = await profileApi.get();
+        if (!profile) return;
+
+        // Apply default log mode
+        const defaultMode = profile.default_log_mode || profile.defaultLogMode;
+        if (!initialData?.input_method && defaultMode) {
+          setInputMode(defaultMode === "voice" ? "speak" : "type");
+          update("input_method", defaultMode === "voice" ? "voice" : "text");
+        }
+
+        // Apply default dream type
+        const defaultType = profile.default_dream_type || profile.defaultDreamType;
+        if (!initialData?.dream_type && defaultType) {
+          update("dream_type", defaultType);
+        }
+
+        // Apply default sleep quality
+        const defaultSleep = profile.default_sleep_quality ?? profile.defaultSleepQuality;
+        if (initialData?.sleep_quality === undefined && typeof defaultSleep === "number" && defaultSleep > 0) {
+          update("sleep_quality", defaultSleep);
+        }
+
+        if (profile.auto_suggest_tags !== undefined) setAutoSuggestEnabled(profile.auto_suggest_tags);
+        if (profile.auto_save_drafts !== undefined) setAutoSaveEnabled(profile.auto_save_drafts);
+        if (profile.voice_language) setVoiceLanguage(profile.voice_language);
+      } catch {
+        // Fallback to localStorage if offline
+        const localLogMode = window.localStorage.getItem("stardrift_default_log_mode");
+        if (!initialData?.input_method && localLogMode === "voice") {
+          setInputMode("speak");
+          update("input_method", "voice");
+        }
+      }
+    }
+
+    void applyUserSettings();
+
+    // Check for autosaved draft
+    try {
+      const rawDraft = window.localStorage.getItem("stardrift_dream_draft");
+      if (rawDraft && !initialData?.title && !initialData?.body) {
+        const parsed = JSON.parse(rawDraft);
+        if (parsed && (parsed.title || parsed.body)) {
+          setForm((f) => ({ ...f, ...parsed }));
+          setDraftRestored(true);
+        }
+      }
+    } catch {
+      // Ignore draft read errors
+    }
+  }, [mode, initialData]);
+
+  useEffect(() => {
+    function onDraftCleared() {
+      setDraftRestored(false);
+      if (mode === "new" && !initialData?.title && !initialData?.body) {
+        setForm({
+          title: "",
+          body: "",
+          dream_date: getYesterdayDateString(),
+          dream_type: "normal",
+          mood: "neutral",
+          sleep_quality: null,
+          is_lucid: false,
+          is_recurring: false,
+          input_method: "text",
+          tags: [],
+        });
+      }
+    }
+    window.addEventListener("draft-cleared", onDraftCleared);
+    return () => window.removeEventListener("draft-cleared", onDraftCleared);
+  }, [mode, initialData]);
+
+  // Autosave draft if enabled
+  useEffect(() => {
+    if (mode !== "new" || !autoSaveEnabled) return;
+    const timer = setTimeout(() => {
+      try {
+        if (form.title.trim() || form.body.trim()) {
+          window.localStorage.setItem("stardrift_dream_draft", JSON.stringify(form));
+        }
+      } catch {
+        // ignore
+      }
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [form, mode, autoSaveEnabled]);
+
   function handleBodyChange(text: string) {
     update("body", text);
-    const suggestions = suggestTags(text).filter((t) => !form.tags.includes(t));
-    setSuggestedTags(suggestions);
+    if (autoSuggestEnabled) {
+      const suggestions = suggestTags(text).filter((t) => !form.tags.includes(t));
+      setSuggestedTags(suggestions);
+    } else {
+      setSuggestedTags([]);
+    }
   }
 
   function addTag(name: string) {
@@ -156,6 +261,11 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
         await dreamsApi.update(dreamId, form);
       } else {
         await dreamsApi.create(form);
+        try {
+          window.localStorage.removeItem("stardrift_dream_draft");
+        } catch {
+          // ignore
+        }
       }
       router.push("/journal");
     } catch (err: unknown) {
@@ -271,6 +381,25 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
           </div>
         </div>
 
+        {draftRestored && (
+          <div className="mt-4 flex items-center justify-between gap-2 rounded-2xl border-2 border-[#081326] bg-[#64dfd0]/15 px-4 py-2.5 text-xs font-extrabold text-[#64dfd0] shadow-[0_2px_0_0_#081326]">
+            <span className="flex items-center gap-2">
+              <Sparkles size={15} /> Restored your unfinished dream draft
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setDraftRestored(false);
+                try { window.localStorage.removeItem("stardrift_dream_draft"); } catch {}
+                setForm((f) => ({ ...f, title: "", body: "", tags: [] }));
+              }}
+              className="rounded-lg border border-[#64dfd0]/40 px-2 py-1 text-[11px] font-bold text-[#eef6ff] hover:bg-[#64dfd0]/20"
+            >
+              Discard draft
+            </button>
+          </div>
+        )}
+
         {/* Title Field */}
         <div className="mt-4">
           <label htmlFor="dream-title" className="block text-sm font-extrabold text-[#cfe3fc] mb-1.5">
@@ -295,7 +424,7 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
 
           {inputMode === "speak" ? (
             <div className="rounded-2xl border-2 border-[#081326] bg-[#0e2040] p-4 flex flex-col items-center gap-4 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]">
-              <VoiceRecorderButton onTranscript={handleVoiceTranscript} />
+              <VoiceRecorderButton onTranscript={handleVoiceTranscript} lang={voiceLanguage} />
 
               <div className="w-full">
                 <div className="flex items-center justify-between mb-1.5">

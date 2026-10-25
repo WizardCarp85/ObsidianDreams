@@ -1,5 +1,11 @@
 // TypeScript types matching the Django models
 
+export type LogMode = "text" | "voice";
+export type DateFormat = "locale" | "mdy" | "dmy" | "iso";
+export type TimeFormat = "12h" | "24h";
+export type WeekStart = "monday" | "sunday";
+export type AiStyle = "symbolic" | "psychological" | "concise";
+
 export interface UserProfile {
   id: string;
   supabase_id: string;
@@ -7,6 +13,58 @@ export interface UserProfile {
   display_name: string;
   timezone: string;
   theme_preference: "dark" | "light";
+
+  // Profile fields
+  bio: string;
+  dream_intention: string;
+  recall_habit: string;
+
+  // Settings fields (both snake_case and camelCase supported)
+  default_log_mode: LogMode;
+  defaultLogMode?: LogMode;
+  default_dream_type: DreamType;
+  defaultDreamType?: DreamType;
+  default_sleep_quality: number;
+  defaultSleepQuality?: number;
+  voice_language: string;
+  voiceLanguage?: string;
+  auto_save_drafts: boolean;
+  autoSaveDrafts?: boolean;
+  auto_suggest_tags: boolean;
+  autoSuggestTags?: boolean;
+  reminder_enabled: boolean;
+  reminderEnabled?: boolean;
+  reminder_time: string;
+  reminderTime?: string;
+  reminder_days: string[];
+  reminderDays?: string[];
+  lucid_check_enabled: boolean;
+  lucidCheckEnabled?: boolean;
+  lucid_check_interval: string;
+  lucidCheckInterval?: string;
+  ai_insights_enabled: boolean;
+  aiInsightsEnabled?: boolean;
+  ai_style: AiStyle;
+  aiStyle?: AiStyle;
+  default_pattern_days: number;
+  defaultPatternDays?: number;
+  include_nightmares_in_ai: boolean;
+  includeNightmaresInAi?: boolean;
+  date_format: DateFormat;
+  dateFormat?: DateFormat;
+  time_format: TimeFormat;
+  timeFormat?: TimeFormat;
+  week_start: WeekStart;
+  weekStart?: WeekStart;
+  blur_previews: boolean;
+  blurPreviews?: boolean;
+  pin_lock_enabled: boolean;
+  pinLockEnabled?: boolean;
+  pin_code: string;
+  pinCode?: string;
+  auto_lock_minutes: number;
+  autoLockMinutes?: number;
+
   created_at: string;
 }
 

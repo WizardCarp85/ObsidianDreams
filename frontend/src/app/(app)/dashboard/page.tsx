@@ -26,7 +26,7 @@ import {
 import { dashboardApi, profileApi } from "@/lib/api";
 import { getSupabaseClient } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
-import type { DashboardSummary } from "@/types";
+import type { DashboardSummary, DateFormat } from "@/types";
 import {
   DREAM_TYPE_LABELS,
   DREAM_TYPE_ICONS,
@@ -167,6 +167,8 @@ const PAGE_SHELL =
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [userName, setUserName] = useState<string>("");
+  const [blurPreviews, setBlurPreviews] = useState(false);
+  const [dateFormat, setDateFormat] = useState<DateFormat>("locale");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -225,8 +227,21 @@ export default function DashboardPage() {
       .get()
       .then((p) => {
         if (p?.display_name) setUserName(p.display_name);
+        if (typeof p?.blur_previews === "boolean") setBlurPreviews(p.blur_previews);
+        else if (typeof p?.blurPreviews === "boolean") setBlurPreviews(p.blurPreviews);
+        const df = (p?.date_format || p?.dateFormat) as DateFormat | undefined;
+        if (df) setDateFormat(df);
       })
       .catch(() => {});
+
+    function onSettingsUpdate(e: Event) {
+      const customEvent = e as CustomEvent;
+      if (typeof customEvent.detail?.settings?.blurPreviews === "boolean") {
+        setBlurPreviews(customEvent.detail.settings.blurPreviews);
+      }
+    }
+    window.addEventListener("settings-updated", onSettingsUpdate);
+    return () => window.removeEventListener("settings-updated", onSettingsUpdate);
   }, [load]);
 
   // Build a continuous 14-day timeline + summary counts from mood_trend
@@ -687,7 +702,7 @@ export default function DashboardPage() {
               </div>
 
               <span className="rounded-full border-2 border-[#081326] bg-[#0e2040] px-3 py-1 text-xs font-extrabold text-[#9bc0ed]">
-                {formatRelativeDate(data.last_dream.dream_date)}
+                {formatRelativeDate(data.last_dream.dream_date, dateFormat)}
               </span>
             </div>
 
@@ -716,10 +731,14 @@ export default function DashboardPage() {
               })()}
             </div>
 
-            {/* Excerpt stretches so the button pins to card bottom */}
-            <div className="flex flex-1 flex-col justify-center rounded-2xl border-2 border-[#081326] bg-[#0e2040] p-4">
+            <div className="group flex flex-1 flex-col justify-center rounded-2xl border-2 border-[#081326] bg-[#0e2040] p-4">
               <h3 className="text-base font-extrabold text-white line-clamp-1">{data.last_dream.title}</h3>
-              <p className="mt-1.5 line-clamp-4 text-xs font-medium leading-relaxed text-[#b8d2f4] sm:text-sm">
+              <p
+                className={`mt-1.5 line-clamp-4 text-xs font-medium leading-relaxed text-[#b8d2f4] sm:text-sm transition-all duration-200 ${
+                  blurPreviews ? "blur-[5px] select-none hover:blur-none" : ""
+                }`}
+                title={blurPreviews ? "Hover to reveal preview" : undefined}
+              >
                 {data.last_dream.excerpt ||
                   "Open this entry to revisit the full story and details you captured."}
               </p>

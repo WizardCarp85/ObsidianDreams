@@ -7,8 +7,8 @@ import {
   Trash2, ArrowLeft, Star, Sparkles, Repeat, Mic, Pencil, Quote,
   Hash, CalendarDays, Clock, Moon, AlertTriangle, Loader2, X,
 } from "lucide-react";
-import { dreamsApi } from "@/lib/api";
-import type { Dream } from "@/types";
+import { dreamsApi, profileApi } from "@/lib/api";
+import type { DateFormat, Dream } from "@/types";
 import { DreamForm } from "@/components/DreamForm";
 import { DREAM_TYPE_LABELS, DREAM_TYPE_ICONS, MOOD_LABELS, formatDate } from "@/lib/utils";
 import {
@@ -27,6 +27,15 @@ export default function DreamDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const [dateFormat, setDateFormat] = useState<DateFormat>("locale");
+
+  useEffect(() => {
+    profileApi.get().then((p) => {
+      const df = (p?.date_format || p?.dateFormat) as DateFormat | undefined;
+      if (df) setDateFormat(df);
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -209,7 +218,7 @@ export default function DreamDetailPage() {
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#081326] bg-[#0e2040] px-3 py-1 text-xs font-extrabold text-[#9bc0ed]">
               <CalendarDays size={12} className="text-[#64dfd0]" />
-              {formatDate(dream.dream_date)}
+              {formatDate(dream.dream_date, dateFormat)}
             </span>
           </div>
 

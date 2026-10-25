@@ -185,9 +185,9 @@ export default function ProfilePage() {
 
         setDraft({
           display_name: name,
-          bio: (pr as any)?.bio ?? "",
-          dream_intention: (pr as any)?.dream_intention || "recall",
-          recall_habit: (pr as any)?.recall_habit || "wake",
+          bio: pr?.bio ?? "",
+          dream_intention: pr?.dream_intention || "recall",
+          recall_habit: pr?.recall_habit || "wake",
         });
       } finally {
         if (!dead) setLoading(false);
@@ -210,9 +210,9 @@ export default function ProfilePage() {
 
   const initial = String(displayName).charAt(0).toUpperCase();
   const email = profile?.email || authUser?.email || null;
-  const bio = (profile as any)?.bio || "";
-  const intention = (profile as any)?.dream_intention || draft.dream_intention;
-  const ritual = (profile as any)?.recall_habit || draft.recall_habit;
+  const bio = profile?.bio || "";
+  const intention = profile?.dream_intention || draft.dream_intention;
+  const ritual = profile?.recall_habit || draft.recall_habit;
   const totalDreams = summary?.total_dreams ?? 0;
 
   const joinedLabel = useMemo(() => {
@@ -263,12 +263,12 @@ export default function ProfilePage() {
         bio: draft.bio.trim(),
         dream_intention: draft.dream_intention,
         recall_habit: draft.recall_habit,
-      } as any);
+      });
       setProfile(res);
       setEditing(false);
       setSaveOk(true);
       window.dispatchEvent(
-        new CustomEvent("profile-updated", { detail: { display_name: res.display_name } })
+        new CustomEvent("profile-updated", { detail: { display_name: res.display_name, profile: res } })
       );
     } catch (e: any) {
       setSaveErr(e?.message || "Could not save. Please try again.");

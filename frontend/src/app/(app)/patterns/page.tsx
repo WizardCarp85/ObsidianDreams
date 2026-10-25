@@ -50,7 +50,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { patternsApi } from "@/lib/api";
+import { patternsApi, profileApi } from "@/lib/api";
 import type { PatternsOverview } from "@/types";
 import { DREAM_TYPE_LABELS, MOOD_LABELS } from "@/lib/utils";
 
@@ -92,9 +92,11 @@ const LABEL_STYLE: CSSProperties = {
 
 const RANGE_OPTIONS = [
   { label: "30D", longLabel: "Last 30 nights", value: 30 },
+  { label: "60D", longLabel: "Last 60 nights", value: 60 },
   { label: "90D", longLabel: "Last 90 nights", value: 90 },
+  { label: "180D", longLabel: "Last 6 months", value: 180 },
   { label: "1Y", longLabel: "Last year", value: 365 },
-] as const;
+];
 
 function getDreamTypeLabel(type: string) {
   return (DREAM_TYPE_LABELS as Record<string, string>)[type] || type.replaceAll("_", " ");
@@ -407,7 +409,21 @@ export default function PatternsPage() {
   }, []);
 
   useEffect(() => {
-    void loadData(90, true);
+    async function init() {
+      let initialPeriod = 90;
+      try {
+        const pr = await profileApi.get();
+        const configuredDays = pr?.default_pattern_days ?? pr?.defaultPatternDays;
+        if (typeof configuredDays === "number" && configuredDays > 0) {
+          initialPeriod = configuredDays;
+          setDays(configuredDays);
+        }
+      } catch {
+        // fallback
+      }
+      void loadData(initialPeriod, true);
+    }
+    void init();
   }, [loadData]);
 
   async function generateInsight() {

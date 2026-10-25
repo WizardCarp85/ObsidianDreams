@@ -79,19 +79,31 @@ export const MOOD_EMOJIS: Record<string, string> = {
 export const DREAM_TYPES = Object.keys(DREAM_TYPE_LABELS);
 export const MOOD_TYPES = Object.keys(MOOD_LABELS);
 
-export function formatDate(dateStr: string): string {
+export function formatDate(dateStr: string, format?: "locale" | "mdy" | "dmy" | "iso"): string {
   const d = new Date(dateStr + "T12:00:00");
+  if (isNaN(d.getTime())) return dateStr;
+  if (format === "iso") return dateStr.slice(0, 10);
+  if (format === "mdy") {
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${mm}/${dd}/${d.getFullYear()}`;
+  }
+  if (format === "dmy") {
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    return `${dd}/${mm}/${d.getFullYear()}`;
+  }
   return d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 }
 
-export function formatRelativeDate(dateStr: string): string {
+export function formatRelativeDate(dateStr: string, format?: "locale" | "mdy" | "dmy" | "iso"): string {
   const d = new Date(dateStr + "T12:00:00");
   const now = new Date();
   const diff = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
   if (diff === 0) return "Today";
   if (diff === 1) return "Yesterday";
   if (diff < 7) return `${diff} days ago`;
-  return formatDate(dateStr);
+  return formatDate(dateStr, format);
 }
 
 export function getTodayDateString(): string {

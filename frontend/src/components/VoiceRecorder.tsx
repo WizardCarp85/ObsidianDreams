@@ -47,11 +47,12 @@ function getSpeechRecognition(): ISpeechRecognitionConstructor | null {
 interface VoiceRecorderProps {
   onTranscript: (text: string) => void;
   disabled?: boolean;
+  lang?: string;
 }
 
 const WAVE_BARS = [14, 26, 18, 34, 22, 30, 16];
 
-export function VoiceRecorderButton({ onTranscript, disabled }: VoiceRecorderProps) {
+export function VoiceRecorderButton({ onTranscript, disabled, lang = "en-US" }: VoiceRecorderProps) {
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
@@ -66,7 +67,7 @@ export function VoiceRecorderButton({ onTranscript, disabled }: VoiceRecorderPro
     }
 
     const recognition = new SpeechRecognitionAPI();
-    recognition.lang = "en-US";
+    recognition.lang = lang || "en-US";
     recognition.continuous = true;
     recognition.interimResults = true;
 

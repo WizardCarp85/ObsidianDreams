@@ -199,7 +199,8 @@ def patterns_overview(request):
         return Response({})
 
     today = datetime.date.today()
-    days = int(request.query_params.get("days", 90))
+    default_days = getattr(profile, "default_pattern_days", 90) or 90
+    days = int(request.query_params.get("days", default_days))
     since = today - datetime.timedelta(days=days)
 
     dreams_qs = Dream.objects.filter(user=profile, dream_date__gte=since)
@@ -279,7 +280,20 @@ def generate_insight(request):
     today = datetime.date.today()
     period_start = today - datetime.timedelta(days=30)
 
+    if not getattr(profile, "ai_insights_enabled", True):
+        placeholder = "AI Insights are currently paused in your settings. You can re-enable them under Settings > AI & Patterns anytime."
+        insight, _ = Insight.objects.update_or_create(
+            user=profile,
+            period_start=period_start,
+            period_end=today,
+            defaults={"summary_text": placeholder, "stats_json": {}},
+        )
+        return Response(InsightSerializer(insight).data)
+
     recent = Dream.objects.filter(user=profile, dream_date__gte=period_start)
+    if not getattr(profile, "include_nightmares_in_ai", True):
+        recent = recent.exclude(dream_type="nightmare")
+
     total = recent.count()
 
     if total == 0:
@@ -320,12 +334,19 @@ def generate_insight(request):
         try:
             import openai
             openai.api_key = openai_key
-            prompt = f"""You are a thoughtful dream journal assistant. Analyze these dream statistics for a user and write 2-4 sentences of compassionate, insightful pattern observations. Be specific about what you notice. Don't use clinical language.
+            ai_style = getattr(profile, "ai_style", "symbolic")
+            style_instruction = {
+                "psychological": "Focus on emotional processing, subconscious motives, and internal reflections.",
+                "concise": "Be very concise, direct, and punchy. Maximum 2 sentences. No fluff.",
+                "symbolic": "Focus on dream symbolism, mythical motifs, and surreal imagery.",
+            }.get(ai_style, "Focus on dream symbolism, mythical motifs, and surreal imagery.")
+
+            prompt = f"""You are a thoughtful dream journal assistant. Analyze these dream statistics for a user and write 2-4 sentences of compassionate, insightful pattern observations. {style_instruction} Be specific about what you notice. Don't use clinical language.
 
 Dream statistics (last 30 days):
 {json.dumps(stats, indent=2)}
 
-Write a warm, insightful narrative summary (2-4 sentences)."""
+Write a warm, insightful narrative summary."""
 
             response = openai.ChatCompletion.create(
                 model="gpt-4o-mini",
