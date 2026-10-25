@@ -30,17 +30,6 @@ export default function NewDreamPage() {
     >
       <JournalStyles />
 
-      {/* Back control */}
-      <div className="shrink-0">
-        <Link
-          href="/journal"
-          className="jr-btn-secondary inline-flex items-center gap-2 px-4 py-2.5 text-sm"
-          aria-label="Back to journal"
-        >
-          <ArrowLeft size={16} strokeWidth={2.8} /> Journal
-        </Link>
-      </div>
-
       {/* Illustrated banner - w-full */}
       <section className="jr-card relative flex w-full shrink-0 flex-col overflow-hidden rounded-[28px] bg-gradient-to-br from-[#1b3a70] via-[#152d59] to-[#0f2245] p-6 sm:p-8">
         <div
@@ -52,17 +41,27 @@ export default function NewDreamPage() {
         <CartoonSparkle size={15} color="#ffe082" className="pointer-events-none absolute right-10 top-7 opacity-90" />
         <CartoonSparkle size={11} color="#64dfd0" className="pointer-events-none absolute right-28 top-16 hidden opacity-75 sm:block" />
 
-        <div className="relative z-10 max-w-2xl">
-          <span className="mb-3 inline-flex items-center gap-1.5 rounded-full border-2 border-[#081326] bg-[#0e2040] px-3 py-1 text-xs font-extrabold text-[#7ac8ff] shadow-[0_2px_0_0_#081326]">
-            <Sparkles size={13} className="text-[#ffe082]" />
-            Fresh page
-          </span>
-          <h1 className="mb-2 text-2xl font-extrabold tracking-tight text-white [text-shadow:0_3px_0_#081326] sm:text-3xl">
-            Capture tonight&apos;s dream
-          </h1>
-          <p className="text-sm font-semibold leading-relaxed text-[#bad4f7]">
-            Write it down while it&apos;s still vivid — details fade within minutes of waking. Nothing here is shared; this page is yours alone.
-          </p>
+        <div className="relative z-10 flex flex-wrap items-start justify-between gap-4">
+          <div className="max-w-xl">
+            <span className="mb-3 inline-flex items-center gap-1.5 rounded-full border-2 border-[#081326] bg-[#0e2040] px-3 py-1 text-xs font-extrabold text-[#7ac8ff] shadow-[0_2px_0_0_#081326]">
+              <Sparkles size={13} className="text-[#ffe082]" />
+              Fresh page
+            </span>
+            <h1 className="mb-2 text-2xl font-extrabold tracking-tight text-white [text-shadow:0_3px_0_#081326] sm:text-3xl">
+              Capture tonight&apos;s dream
+            </h1>
+            <p className="text-sm font-semibold leading-relaxed text-[#bad4f7]">
+              Write it down while it&apos;s still vivid — details fade within minutes of waking. Nothing here is shared; this page is yours alone.
+            </p>
+          </div>
+
+          <Link
+            href="/journal"
+            className="jr-btn-secondary inline-flex shrink-0 items-center gap-2 px-4 py-2.5 text-sm"
+            aria-label="Back to journal"
+          >
+            <ArrowLeft size={16} strokeWidth={2.8} /> Back to journal
+          </Link>
         </div>
       </section>
 

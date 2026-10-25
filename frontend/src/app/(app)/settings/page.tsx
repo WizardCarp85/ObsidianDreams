@@ -1,12 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   Bell,
   BookOpen,
   Check,
+  ChevronDown,
   Download,
   FileSpreadsheet,
   FileText,
@@ -136,6 +143,9 @@ const TIMEZONES = [
   "Australia/Sydney",
 ];
 
+const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+const MINUTES = ["00", "15", "30", "45"];
+
 const SETTINGS_NAV: {
   id: SettingsSectionId;
   label: string;
@@ -150,6 +160,15 @@ const SETTINGS_NAV: {
   { id: "privacy", label: "Privacy & Vault", description: "On-device privacy", icon: ShieldCheck, accent: "#5bb8ff" },
   { id: "data", label: "Backup & Export", description: "Take your archive", icon: Download, accent: "#ffe082" },
   { id: "account", label: "Account", description: "Session and deletion", icon: LogOut, accent: "#ff859d" },
+];
+
+const DREAM_TYPE_OPTIONS: { value: DreamType; label: string }[] = [
+  { value: "normal", label: "Normal dream" },
+  { value: "lucid", label: "Lucid dream" },
+  { value: "recurring", label: "Recurring dream" },
+  { value: "fragmented", label: "Fragmented dream" },
+  { value: "nightmare", label: "Nightmare" },
+  { value: "nap", label: "Daytime nap" },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -192,10 +211,119 @@ function SettingsStyles() {
       .settings-scroll::-webkit-scrollbar-thumb { background: #2a4a7d; border-radius: 999px; }
       @keyframes panelIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
       .settings-panel-enter { animation: panelIn .2s ease-out; }
+      @keyframes toastPop {
+        0% { opacity: 0; transform: translateY(-12px) scale(0.95); }
+        60% { transform: translateY(2px) scale(1.02); }
+        100% { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      .settings-toast-enter { animation: toastPop .25s cubic-bezier(0.34, 1.35, 0.64, 1); }
       @media (prefers-reduced-motion: reduce) {
-        .settings-button, .settings-nav-button, .settings-panel-enter { animation: none !important; transition: none !important; }
+        .settings-button, .settings-nav-button, .settings-panel-enter, .settings-toast-enter { animation: none !important; transition: none !important; }
       }
     `}</style>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Cartoon form controls                                               */
+/* ------------------------------------------------------------------ */
+
+function CartoonSelect<T extends string | number>({
+  value,
+  onChange,
+  options,
+  disabled = false,
+  className = "sm:w-56",
+}: {
+  value: T;
+  onChange: (v: T) => void;
+  options: { value: T; label: string }[];
+  disabled?: boolean;
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selected = options.find((o) => o.value === value);
+
+  useEffect(() => {
+    function onDoc(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
+  return (
+    <div ref={ref} className={`relative ${className}`}>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen((o) => !o)}
+        className="settings-field flex w-full items-center justify-between gap-2 text-left disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <span className="truncate">{selected?.label ?? "Select…"}</span>
+        <ChevronDown
+          size={16}
+          strokeWidth={2.6}
+          className={`shrink-0 text-[#6bc2ff] transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {open && (
+        <div className="absolute z-30 mt-1.5 max-h-56 w-full overflow-y-auto rounded-xl border-[2.5px] border-[#081326] bg-[#0d1f3f] py-1 shadow-[0_4px_0_0_#081326]">
+          {options.map((opt) => {
+            const active = opt.value === value;
+            return (
+              <button
+                key={String(opt.value)}
+                type="button"
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
+                className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-xs font-extrabold ${
+                  active ? "bg-[#1d3b70] text-white" : "text-[#cfe3fc] hover:bg-[#173260]"
+                }`}
+              >
+                <span className="truncate">{opt.label}</span>
+                {active && <Check size={13} strokeWidth={3} className="shrink-0 text-[#64dfd0]" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CartoonTimePicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [hour = "07", minute = "30"] = value.split(":");
+  const nearestMinute = MINUTES.includes(minute) ? minute : MINUTES.reduce((best, m) =>
+    Math.abs(Number(m) - Number(minute)) < Math.abs(Number(best) - Number(minute)) ? m : best
+  );
+
+  return (
+    <div className="flex items-center gap-2">
+      <CartoonSelect
+        value={hour}
+        onChange={(h) => onChange(`${h}:${nearestMinute}`)}
+        options={HOURS.map((h) => ({ value: h, label: h }))}
+        className="w-[4.5rem]"
+      />
+      <span className="text-sm font-extrabold text-[#6bc2ff]">:</span>
+      <CartoonSelect
+        value={nearestMinute}
+        onChange={(m) => onChange(`${hour}:${m}`)}
+        options={MINUTES.map((m) => ({ value: m, label: m }))}
+        className="w-[4.5rem]"
+      />
+    </div>
   );
 }
 
@@ -224,7 +352,7 @@ function Toggle({
       aria-checked={checked}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className="relative h-7 w-12 shrink-0 rounded-full border-2 border-[#081326] transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffe082]"
+      className="relative h-7 w-12 shrink-0 rounded-full border-2 border-[#081326] shadow-[0_2px_0_0_#081326] transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffe082]"
       style={{ backgroundColor: checked ? accent : "#2a4267" }}
     >
       <span
@@ -322,16 +450,16 @@ function Notice({
   children: ReactNode;
 }) {
   const styles = {
-    info: { bg: "bg-[#102448]", icon: "bg-[#5bb8ff]", text: "text-[#cfe3fc]" },
-    success: { bg: "bg-[#103a3c]", icon: "bg-[#64dfd0]", text: "text-[#b9fff3]" },
-    warning: { bg: "bg-[#3a2340]", icon: "bg-[#ff859d]", text: "text-[#ffd2db]" },
+    info: { bg: "bg-gradient-to-r from-[#142e5c] to-[#0f2347]", icon: "bg-[#5bb8ff]", text: "text-[#d8e8fc]" },
+    success: { bg: "bg-gradient-to-r from-[#133b52] to-[#10264c]", icon: "bg-[#64dfd0]", text: "text-[#d4f9f2]" },
+    warning: { bg: "bg-gradient-to-r from-[#3a1d38] to-[#221636]", icon: "bg-[#ff859d]", text: "text-[#fed9e2]" },
   };
   const current = styles[type];
 
   return (
-    <div className={`flex items-start gap-3 rounded-2xl border-2 border-[#081326] p-4 ${current.bg}`}>
+    <div className={`settings-card flex items-start gap-3 rounded-2xl p-4 ${current.bg}`}>
       <span
-        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border-2 border-[#081326] text-[#081326] ${current.icon}`}
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border-2 border-[#081326] text-[#081326] shadow-[0_2px_0_0_#081326] ${current.icon}`}
       >
         {type === "warning" ? (
           <AlertTriangle size={15} strokeWidth={2.6} />
@@ -341,7 +469,85 @@ function Notice({
           <Info size={15} strokeWidth={2.6} />
         )}
       </span>
-      <div className={`min-w-0 flex-1 pt-0.5 text-xs font-medium leading-relaxed ${current.text}`}>{children}</div>
+      <div className={`min-w-0 flex-1 pt-0.5 text-xs font-medium leading-relaxed ${current.text}`}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function FeedbackToast({
+  feedback,
+  onDismiss,
+}: {
+  feedback: Feedback;
+  onDismiss: () => void;
+}) {
+  useEffect(() => {
+    const timer = setTimeout(onDismiss, feedback.type === "error" ? 6000 : 4200);
+    return () => clearTimeout(timer);
+  }, [feedback, onDismiss]);
+
+  const config = {
+    success: {
+      gradient: "from-[#133d52] via-[#153460] to-[#0f2448]",
+      badgeBg: "bg-[#64dfd0]",
+      badgeIcon: Check,
+      tag: "Saved",
+      tagColor: "text-[#64dfd0]",
+      textColor: "text-[#eef6ff]",
+    },
+    error: {
+      gradient: "from-[#3e1a33] via-[#2a1738] to-[#16122e]",
+      badgeBg: "bg-[#ff859d]",
+      badgeIcon: AlertTriangle,
+      tag: "Attention",
+      tagColor: "text-[#ff859d]",
+      textColor: "text-[#ffe3ea]",
+    },
+    info: {
+      gradient: "from-[#163868] via-[#142d5a] to-[#0f2144]",
+      badgeBg: "bg-[#5bb8ff]",
+      badgeIcon: Sparkles,
+      tag: "Notice",
+      tagColor: "text-[#5bb8ff]",
+      textColor: "text-[#eaf2ff]",
+    },
+  }[feedback.type];
+
+  const Icon = config.badgeIcon;
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="settings-toast-enter fixed inset-x-4 top-4 z-50 sm:inset-x-auto sm:right-6 sm:top-6 sm:max-w-md"
+    >
+      <div
+        className={`settings-card flex items-center gap-3.5 rounded-2xl bg-gradient-to-r ${config.gradient} p-3.5 pr-3 shadow-[0_6px_0_0_#081326,0_16px_32px_-6px_rgba(8,19,38,0.6)]`}
+      >
+        <span
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border-2 border-[#081326] ${config.badgeBg} text-[#081326] shadow-[0_2px_0_0_#081326]`}
+        >
+          <Icon size={17} strokeWidth={2.8} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <span className={`text-[10px] font-extrabold uppercase tracking-widest ${config.tagColor}`}>
+            {config.tag}
+          </span>
+          <p className={`text-xs font-bold leading-snug sm:text-sm ${config.textColor}`}>
+            {feedback.message}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 border-[#081326] bg-[#0c1b36]/70 text-[#8fb2de] hover:bg-[#1a3769] hover:text-white"
+          aria-label="Dismiss message"
+        >
+          <X size={14} strokeWidth={2.6} />
+        </button>
+      </div>
     </div>
   );
 }
@@ -445,7 +651,6 @@ export default function SettingsPage() {
 
     async function loadSettings() {
       let initial = { ...DEFAULT_SETTINGS };
-
       try {
         initial.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
         const saved = window.localStorage.getItem(STORAGE_KEY);
@@ -453,16 +658,14 @@ export default function SettingsPage() {
         const legacyLogMode = window.localStorage.getItem("stardrift_default_log_mode");
         if (legacyLogMode === "text" || legacyLogMode === "voice") initial.defaultLogMode = legacyLogMode;
       } catch {
-        // Keep defaults if local storage is unavailable.
+        // Keep defaults
       }
-
       try {
         const profile = await profileApi.get();
         if (profile?.timezone) initial.timezone = profile.timezone;
       } catch {
         // Browser timezone remains the fallback.
       }
-
       if (!mounted) return;
       setSettings(initial);
       setSavedSnapshot(JSON.stringify(initial));
@@ -605,13 +808,7 @@ export default function SettingsPage() {
       if (format === "json") {
         downloadFile(
           JSON.stringify(
-            {
-              app: "Stardrift",
-              exportedAt: new Date().toISOString(),
-              timezone: settings.timezone,
-              totalDreams: dreams.length,
-              dreams,
-            },
+            { app: "Stardrift", exportedAt: new Date().toISOString(), timezone: settings.timezone, totalDreams: dreams.length, dreams },
             null,
             2
           ),
@@ -720,7 +917,7 @@ export default function SettingsPage() {
       try {
         window.localStorage.clear();
       } catch {
-        // Ignore local storage cleanup errors.
+        // Ignore
       }
       window.location.href = "/";
     } catch (error) {
@@ -736,7 +933,6 @@ export default function SettingsPage() {
     >
       <SettingsStyles />
 
-      {/* Header */}
       <header className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-[#081326] bg-[#132952] shadow-[0_2px_0_0_#081326]">
@@ -746,9 +942,7 @@ export default function SettingsPage() {
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-extrabold tracking-tight text-white sm:text-2xl">Settings</h1>
               <span
-                className={`h-2.5 w-2.5 rounded-full border border-[#081326] ${
-                  isDirty ? "bg-[#ffe082]" : "bg-[#64dfd0]"
-                }`}
+                className={`h-2.5 w-2.5 rounded-full border border-[#081326] ${isDirty ? "bg-[#ffe082]" : "bg-[#64dfd0]"}`}
                 title={isDirty ? "Unsaved changes" : "All saved"}
               />
             </div>
@@ -780,36 +974,15 @@ export default function SettingsPage() {
         </div>
       </header>
 
-      {feedback && (
-        <div className="shrink-0">
-          <Notice type={feedback.type === "error" ? "warning" : feedback.type === "success" ? "success" : "info"}>
-            <div className="flex items-start justify-between gap-4">
-              <span>{feedback.message}</span>
-              <button
-                type="button"
-                onClick={() => setFeedback(null)}
-                className="shrink-0 text-white/60 hover:text-white"
-                aria-label="Dismiss message"
-              >
-                <X size={15} />
-              </button>
-            </div>
-          </Notice>
-        </div>
-      )}
+      {feedback && <FeedbackToast feedback={feedback} onDismiss={() => setFeedback(null)} />}
 
-      {/* Rail + panel fill remaining height */}
       <div className="grid min-h-0 flex-1 items-stretch gap-4 lg:grid-cols-[minmax(220px,260px)_minmax(0,1fr)]">
-        {/* Navigation rail */}
-        <aside className="flex min-h-0 flex-col lg:settings-card lg:rounded-[26px] lg:bg-gradient-to-b lg:from-[#1a3769] lg:to-[#0f2245] lg:p-3">
+        <aside className="flex min-h-0 flex-col lg:rounded-[26px] lg:border-[2.5px] lg:border-[#081326] lg:bg-gradient-to-b lg:from-[#1a3769] lg:to-[#0f2245] lg:p-3 lg:shadow-[0_5px_0_0_#081326]">
           <p className="mb-2 hidden px-2 pt-1 text-[10px] font-extrabold uppercase tracking-widest text-[#7ea4d4] lg:block">
             Categories
           </p>
 
-          <nav
-            aria-label="Settings sections"
-            className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0"
-          >
+          <nav aria-label="Settings sections" className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
             {SETTINGS_NAV.map((item) => {
               const Icon = item.icon;
               const active = activeSection === item.id;
@@ -831,16 +1004,13 @@ export default function SettingsPage() {
                   </span>
                   <span className="min-w-0">
                     <span className="block text-xs font-extrabold text-white">{item.label}</span>
-                    <span className="mt-0.5 block text-[10px] font-semibold text-[#91b0d8]">
-                      {item.description}
-                    </span>
+                    <span className="mt-0.5 block text-[10px] font-semibold text-[#91b0d8]">{item.description}</span>
                   </span>
                 </button>
               );
             })}
           </nav>
 
-          {/* Pinned to rail bottom so the column never ends short */}
           <div className="mt-auto hidden pt-4 lg:block">
             <div className="flex items-start gap-2.5 rounded-2xl border-2 border-[#081326] bg-[#0e2040]/80 p-3">
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-[#081326] bg-[#64dfd0] text-[#081326] shadow-[0_2px_0_0_#081326]">
@@ -853,7 +1023,6 @@ export default function SettingsPage() {
           </div>
         </aside>
 
-        {/* Active panel */}
         <section
           key={activeSection}
           className="settings-card settings-panel-enter flex min-h-0 flex-col overflow-hidden rounded-[26px] bg-[#152d58]"
@@ -885,14 +1054,10 @@ export default function SettingsPage() {
             }
           />
 
-          {/* Scrollable body */}
           <div className="settings-scroll min-h-0 flex-1 overflow-y-auto px-5 pb-5 sm:px-7">
             {activeSection === "capture" && (
               <>
-                <SettingRow
-                  title="Default recording method"
-                  description="Choose the capture screen you want to see first."
-                >
+                <SettingRow title="Default recording method" description="Choose the capture screen you want to see first.">
                   <div className="grid grid-cols-2 gap-2">
                     {[
                       { value: "text" as const, label: "Write", icon: PenTool, color: "#5bb8ff" },
@@ -906,9 +1071,7 @@ export default function SettingsPage() {
                           type="button"
                           onClick={() => updateSetting("defaultLogMode", option.value)}
                           className={`flex items-center justify-center gap-2 rounded-xl border-2 border-[#081326] px-3 py-2.5 text-xs font-extrabold ${
-                            selected
-                              ? "bg-[#1d3b70] text-white shadow-[0_2px_0_0_#081326]"
-                              : "bg-[#0d1f3f] text-[#9bc0ed]"
+                            selected ? "bg-[#1d3b70] text-white shadow-[0_2px_0_0_#081326]" : "bg-[#0d1f3f] text-[#9bc0ed]"
                           }`}
                         >
                           <span
@@ -925,53 +1088,43 @@ export default function SettingsPage() {
                 </SettingRow>
 
                 <SettingRow title="Default dream type" description="Preselect a category for a new dream entry.">
-                  <select
+                  <CartoonSelect
                     value={settings.defaultDreamType}
-                    onChange={(e) => updateSetting("defaultDreamType", e.target.value as DreamType)}
-                    className="settings-field sm:w-56"
-                  >
-                    <option value="normal">Normal dream</option>
-                    <option value="lucid">Lucid dream</option>
-                    <option value="recurring">Recurring dream</option>
-                    <option value="fragmented">Fragmented dream</option>
-                    <option value="nightmare">Nightmare</option>
-                    <option value="nap">Daytime nap</option>
-                  </select>
+                    onChange={(v) => updateSetting("defaultDreamType", v)}
+                    options={DREAM_TYPE_OPTIONS}
+                  />
                 </SettingRow>
 
                 <SettingRow title="Default sleep rating" description="Choose a value to prefill, or ask every time.">
-                  <select
+                  <CartoonSelect
                     value={settings.defaultSleepQuality}
-                    onChange={(e) => updateSetting("defaultSleepQuality", Number(e.target.value))}
-                    className="settings-field sm:w-56"
-                  >
-                    <option value={0}>Ask every time</option>
-                    <option value={5}>5 / 5 stars</option>
-                    <option value={4}>4 / 5 stars</option>
-                    <option value={3}>3 / 5 stars</option>
-                    <option value={2}>2 / 5 stars</option>
-                    <option value={1}>1 / 5 stars</option>
-                  </select>
+                    onChange={(v) => updateSetting("defaultSleepQuality", v)}
+                    options={[
+                      { value: 0, label: "Ask every time" },
+                      { value: 5, label: "5 / 5 stars" },
+                      { value: 4, label: "4 / 5 stars" },
+                      { value: 3, label: "3 / 5 stars" },
+                      { value: 2, label: "2 / 5 stars" },
+                      { value: 1, label: "1 / 5 stars" },
+                    ]}
+                  />
                 </SettingRow>
 
-                <SettingRow
-                  title="Voice dictation language"
-                  description="Used when speech capture is available in your browser."
-                >
-                  <select
+                <SettingRow title="Voice dictation language" description="Used when speech capture is available in your browser.">
+                  <CartoonSelect
                     value={settings.voiceLanguage}
-                    onChange={(e) => updateSetting("voiceLanguage", e.target.value)}
-                    className="settings-field sm:w-56"
-                  >
-                    <option value="en-US">English (United States)</option>
-                    <option value="en-GB">English (United Kingdom)</option>
-                    <option value="en-AU">English (Australia)</option>
-                    <option value="es-ES">Spanish</option>
-                    <option value="fr-FR">French</option>
-                    <option value="de-DE">German</option>
-                    <option value="hi-IN">Hindi</option>
-                    <option value="ja-JP">Japanese</option>
-                  </select>
+                    onChange={(v) => updateSetting("voiceLanguage", v)}
+                    options={[
+                      { value: "en-US", label: "English (United States)" },
+                      { value: "en-GB", label: "English (United Kingdom)" },
+                      { value: "en-AU", label: "English (Australia)" },
+                      { value: "es-ES", label: "Spanish" },
+                      { value: "fr-FR", label: "French" },
+                      { value: "de-DE", label: "German" },
+                      { value: "hi-IN", label: "Hindi" },
+                      { value: "ja-JP", label: "Japanese" },
+                    ]}
+                  />
                 </SettingRow>
 
                 <SettingToggleRow
@@ -1009,11 +1162,9 @@ export default function SettingsPage() {
                       <label className="mb-2 block text-xs font-extrabold uppercase tracking-wider text-[#8cb2e0]">
                         Reminder time
                       </label>
-                      <input
-                        type="time"
+                      <CartoonTimePicker
                         value={settings.reminderTime}
-                        onChange={(e) => updateSetting("reminderTime", e.target.value)}
-                        className="settings-field"
+                        onChange={(v) => updateSetting("reminderTime", v)}
                       />
                     </div>
 
@@ -1064,16 +1215,16 @@ export default function SettingsPage() {
 
                 {settings.lucidCheckEnabled && (
                   <SettingRow title="Reality-check frequency" description="How often these cues should be scheduled.">
-                    <select
+                    <CartoonSelect
                       value={settings.lucidCheckInterval}
-                      onChange={(e) => updateSetting("lucidCheckInterval", e.target.value)}
-                      className="settings-field sm:w-56"
-                    >
-                      <option value="2h">Every 2 hours</option>
-                      <option value="3h">Every 3 hours</option>
-                      <option value="4h">Every 4 hours</option>
-                      <option value="daily">Once at midday</option>
-                    </select>
+                      onChange={(v) => updateSetting("lucidCheckInterval", v)}
+                      options={[
+                        { value: "2h", label: "Every 2 hours" },
+                        { value: "3h", label: "Every 3 hours" },
+                        { value: "4h", label: "Every 4 hours" },
+                        { value: "daily", label: "Once at midday" },
+                      ]}
+                    />
                   </SettingRow>
                 )}
 
@@ -1129,36 +1280,30 @@ export default function SettingsPage() {
                 />
 
                 <div className={settings.aiInsightsEnabled ? "" : "pointer-events-none opacity-50"}>
-                  <SettingRow
-                    title="Interpretation style"
-                    description="Choose the general tone used for AI-generated reflections."
-                  >
-                    <select
+                  <SettingRow title="Interpretation style" description="Choose the general tone used for AI-generated reflections.">
+                    <CartoonSelect
                       value={settings.aiStyle}
+                      onChange={(v) => updateSetting("aiStyle", v)}
                       disabled={!settings.aiInsightsEnabled}
-                      onChange={(e) => updateSetting("aiStyle", e.target.value as AiStyle)}
-                      className="settings-field sm:w-56"
-                    >
-                      <option value="symbolic">Symbolic & archetypal</option>
-                      <option value="psychological">Emotional & reflective</option>
-                      <option value="concise">Concise & grounded</option>
-                    </select>
+                      options={[
+                        { value: "symbolic", label: "Symbolic & archetypal" },
+                        { value: "psychological", label: "Emotional & reflective" },
+                        { value: "concise", label: "Concise & grounded" },
+                      ]}
+                    />
                   </SettingRow>
 
-                  <SettingRow
-                    title="Default pattern window"
-                    description="The time range selected when opening pattern analysis."
-                  >
-                    <select
+                  <SettingRow title="Default pattern window" description="The time range selected when opening pattern analysis.">
+                    <CartoonSelect
                       value={settings.defaultPatternDays}
+                      onChange={(v) => updateSetting("defaultPatternDays", v)}
                       disabled={!settings.aiInsightsEnabled}
-                      onChange={(e) => updateSetting("defaultPatternDays", Number(e.target.value))}
-                      className="settings-field sm:w-56"
-                    >
-                      <option value={30}>Last 30 nights</option>
-                      <option value={90}>Last 90 nights</option>
-                      <option value={365}>Last year</option>
-                    </select>
+                      options={[
+                        { value: 30, label: "Last 30 nights" },
+                        { value: 90, label: "Last 90 nights" },
+                        { value: 365, label: "Last year" },
+                      ]}
+                    />
                   </SettingRow>
 
                   <SettingToggleRow
@@ -1177,17 +1322,12 @@ export default function SettingsPage() {
               <>
                 <SettingRow title="Timezone" description="Used to interpret dream dates and your reminder time.">
                   <div className="flex gap-2">
-                    <select
+                    <CartoonSelect
                       value={settings.timezone}
-                      onChange={(e) => updateSetting("timezone", e.target.value)}
-                      className="settings-field min-w-0 flex-1 sm:w-64"
-                    >
-                      {timezoneOptions.map((tz) => (
-                        <option key={tz} value={tz}>
-                          {tz.replaceAll("_", " ")}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(v) => updateSetting("timezone", v)}
+                      options={timezoneOptions.map((tz) => ({ value: tz, label: tz.replaceAll("_", " ") }))}
+                      className="min-w-0 flex-1 sm:w-64"
+                    />
                     <button
                       type="button"
                       onClick={() =>
@@ -1201,22 +1341,19 @@ export default function SettingsPage() {
                 </SettingRow>
 
                 <SettingRow title="Date format" description="Choose how dates appear in your journal.">
-                  <select
+                  <CartoonSelect
                     value={settings.dateFormat}
-                    onChange={(e) => updateSetting("dateFormat", e.target.value as DateFormat)}
-                    className="settings-field sm:w-56"
-                  >
-                    <option value="locale">Use device default</option>
-                    <option value="mdy">MM / DD / YYYY</option>
-                    <option value="dmy">DD / MM / YYYY</option>
-                    <option value="iso">YYYY-MM-DD</option>
-                  </select>
+                    onChange={(v) => updateSetting("dateFormat", v)}
+                    options={[
+                      { value: "locale", label: "Use device default" },
+                      { value: "mdy", label: "MM / DD / YYYY" },
+                      { value: "dmy", label: "DD / MM / YYYY" },
+                      { value: "iso", label: "YYYY-MM-DD" },
+                    ]}
+                  />
                 </SettingRow>
 
-                <SettingRow
-                  title="Time format"
-                  description="Choose whether time is displayed in 12-hour or 24-hour format."
-                >
+                <SettingRow title="Time format" description="Choose whether time is displayed in 12-hour or 24-hour format.">
                   <ChoiceButtons
                     value={settings.timeFormat}
                     onChange={(v) => updateSetting("timeFormat", v)}
@@ -1228,11 +1365,7 @@ export default function SettingsPage() {
                   />
                 </SettingRow>
 
-                <SettingRow
-                  title="Week starts on"
-                  description="Controls the first day shown in calendar-like views."
-                  border={false}
-                >
+                <SettingRow title="Week starts on" description="Controls the first day shown in calendar-like views." border={false}>
                   <ChoiceButtons
                     value={settings.weekStart}
                     onChange={(v) => updateSetting("weekStart", v)}
@@ -1284,16 +1417,16 @@ export default function SettingsPage() {
                       <label className="mb-2 block text-xs font-extrabold uppercase tracking-wider text-[#8cb2e0]">
                         Auto-lock after
                       </label>
-                      <select
+                      <CartoonSelect
                         value={settings.autoLockMinutes}
-                        onChange={(e) => updateSetting("autoLockMinutes", Number(e.target.value))}
-                        className="settings-field"
-                      >
-                        <option value={5}>5 minutes</option>
-                        <option value={15}>15 minutes</option>
-                        <option value={30}>30 minutes</option>
-                        <option value={60}>1 hour</option>
-                      </select>
+                        onChange={(v) => updateSetting("autoLockMinutes", v)}
+                        options={[
+                          { value: 5, label: "5 minutes" },
+                          { value: 15, label: "15 minutes" },
+                          { value: 30, label: "30 minutes" },
+                          { value: 60, label: "1 hour" },
+                        ]}
+                      />
                     </div>
                   </div>
                 )}
@@ -1323,7 +1456,7 @@ export default function SettingsPage() {
                     return (
                       <div
                         key={option.format}
-                        className="flex flex-col rounded-2xl border-2 border-[#081326] bg-[#0d1f3f] p-4"
+                        className="flex flex-col rounded-2xl border-2 border-[#081326] bg-[#0d1f3f] p-4 shadow-[0_3px_0_0_#081326]"
                       >
                         <span
                           className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border-2 border-[#081326] shadow-[0_2px_0_0_#081326]"
@@ -1384,7 +1517,7 @@ export default function SettingsPage() {
                   </button>
                 </SettingRow>
 
-                <div className="mt-4 rounded-2xl border-2 border-[#5a3149] bg-[#241b35] p-4">
+                <div className="mt-4 rounded-2xl border-2 border-[#081326] bg-[#241b35] p-4 shadow-[0_3px_0_0_#081326]">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="text-sm font-extrabold text-[#ffb1c1]">Delete account permanently</p>
@@ -1410,7 +1543,6 @@ export default function SettingsPage() {
             )}
           </div>
 
-          {/* Pinned footer — fills the bottom so short panels never leave a hole */}
           <footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t-2 border-[#081326]/50 bg-[#11264c] px-5 py-3.5 sm:px-7">
             <div className="flex items-center gap-2.5">
               <span
@@ -1435,7 +1567,6 @@ export default function SettingsPage() {
         </section>
       </div>
 
-      {/* Mobile save bar */}
       {isDirty && (
         <div className="fixed inset-x-4 bottom-4 z-30 lg:hidden">
           <div className="settings-card flex items-center justify-between gap-3 rounded-2xl bg-[#16305d] p-3">
@@ -1453,7 +1584,6 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Delete account modal */}
       {deleteOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-[#050b18]/80 p-4 backdrop-blur-sm"

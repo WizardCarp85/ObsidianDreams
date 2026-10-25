@@ -4,38 +4,18 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Trash2,
-  ArrowLeft,
-  Star,
-  Sparkles,
-  Repeat,
-  Mic,
-  Pencil,
-  Quote,
-  Hash,
-  CalendarDays,
-  Clock,
-  Moon,
-  AlertTriangle,
-  Loader2,
-  X,
+  Trash2, ArrowLeft, Star, Sparkles, Repeat, Mic, Pencil, Quote,
+  Hash, CalendarDays, Clock, Moon, AlertTriangle, Loader2, X,
 } from "lucide-react";
 import { dreamsApi } from "@/lib/api";
 import type { Dream } from "@/types";
 import { DreamForm } from "@/components/DreamForm";
+import { DREAM_TYPE_LABELS, DREAM_TYPE_ICONS, MOOD_LABELS, formatDate } from "@/lib/utils";
 import {
-  DREAM_TYPE_LABELS,
-  DREAM_TYPE_ICONS,
-  MOOD_LABELS,
-  formatDate,
-} from "@/lib/utils";
-import {
-  CartoonCloud,
-  CartoonSparkle,
-  JournalStyles,
-  JOURNAL_FONT,
-  getMoodStickerStyle,
+  CartoonCloud, CartoonSparkle, JournalStyles, JOURNAL_FONT, getMoodStickerStyle,
 } from "@/components/JournalTheme";
+
+const PAGE_SHELL = "flex h-full min-h-[calc(100dvh-5.5rem)] w-full flex-col gap-4";
 
 export default function DreamDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -50,32 +30,19 @@ export default function DreamDetailPage() {
 
   useEffect(() => {
     let active = true;
-    dreamsApi
-      .get(id)
-      .then((d) => {
-        if (active) setDream(d);
-      })
+    dreamsApi.get(id)
+      .then((d) => { if (active) setDream(d); })
       .catch(() => {})
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, [id]);
 
-  // Escape closes the delete modal + lock background scroll
   useEffect(() => {
     if (!confirmOpen) return;
-
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !deleting) setConfirmOpen(false);
-    };
-
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && !deleting) setConfirmOpen(false); };
     document.addEventListener("keydown", onKey);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;
@@ -99,17 +66,14 @@ export default function DreamDetailPage() {
     return { wordCount: words, readMinutes: Math.max(1, Math.ceil(words / 200)) };
   }, [dream?.body]);
 
-  /* Loading skeleton */
+  /* Loading */
   if (loading) {
     return (
-      <div
-        className="flex max-w-3xl flex-col gap-5 pb-24 md:pb-10"
-        style={{ fontFamily: JOURNAL_FONT }}
-      >
+      <div className={PAGE_SHELL} style={{ fontFamily: JOURNAL_FONT }}>
         <JournalStyles />
-        <div className="jr-card h-40 animate-pulse rounded-[28px] bg-[#162e59]" />
-        <div className="jr-card h-56 animate-pulse rounded-3xl bg-[#152c57]" />
-        <div className="jr-card h-24 animate-pulse rounded-3xl bg-[#152c57]" />
+        <div className="jr-card h-40 w-full shrink-0 animate-pulse rounded-[28px] bg-[#162e59]" />
+        <div className="jr-card w-full flex-1 animate-pulse rounded-3xl bg-[#152c57]" />
+        <div className="jr-card h-24 w-full shrink-0 animate-pulse rounded-3xl bg-[#152c57]" />
       </div>
     );
   }
@@ -117,29 +81,18 @@ export default function DreamDetailPage() {
   /* Not found */
   if (!dream) {
     return (
-      <div
-        className="max-w-3xl pb-24 md:pb-10"
-        style={{ fontFamily: JOURNAL_FONT }}
-      >
+      <div className={PAGE_SHELL} style={{ fontFamily: JOURNAL_FONT }}>
         <JournalStyles />
-        <section className="jr-card relative overflow-hidden rounded-3xl bg-[#162e59] p-10 text-center">
-          <CartoonCloud
-            fill="#20427d"
-            className="pointer-events-none absolute -bottom-8 -right-10 w-52 opacity-60"
-          />
+        <section className="jr-card relative flex w-full flex-1 items-center justify-center overflow-hidden rounded-3xl bg-[#162e59] p-10 text-center">
+          <CartoonCloud fill="#20427d" className="pointer-events-none absolute -bottom-8 -right-10 w-52 opacity-60" />
           <div className="relative z-10 flex flex-col items-center gap-4">
-            <div
-              className="flex h-16 w-16 items-center justify-center rounded-3xl border-[2.5px] border-[#081326] bg-[#ff9bb0] shadow-[0_4px_0_0_#081326]"
-              style={{ animation: "jrFloat 6s ease-in-out infinite" }}
-            >
+            <div className="flex h-16 w-16 items-center justify-center rounded-3xl border-[2.5px] border-[#081326] bg-[#ff9bb0] shadow-[0_4px_0_0_#081326]"
+              style={{ animation: "jrFloat 6s ease-in-out infinite" }}>
               <Moon size={28} className="text-[#081326]" strokeWidth={2.4} />
             </div>
-            <h2 className="text-xl font-extrabold text-white [text-shadow:0_2px_0_#081326]">
-              This dream drifted away
-            </h2>
+            <h2 className="text-xl font-extrabold text-white [text-shadow:0_2px_0_#081326]">This dream drifted away</h2>
             <p className="max-w-sm text-sm font-semibold text-[#b8d2f4]">
-              We couldn&apos;t find that entry. It may have been deleted or the
-              link is incorrect.
+              We couldn&apos;t find that entry. It may have been deleted or the link is incorrect.
             </p>
             <Link href="/journal" className="jr-btn-primary px-5 py-3 text-sm">
               <ArrowLeft size={16} strokeWidth={2.8} /> Back to journal
@@ -150,47 +103,31 @@ export default function DreamDetailPage() {
     );
   }
 
-  /* Edit mode — DreamForm re-skinned via .jr-form-scope */
+  /* Edit mode */
   if (editMode) {
     return (
-      <div
-        className="flex max-w-3xl flex-col gap-5 pb-24 md:pb-10"
-        style={{ fontFamily: JOURNAL_FONT }}
-      >
+      <div className={PAGE_SHELL} style={{ fontFamily: JOURNAL_FONT }}>
         <JournalStyles />
 
-        <section className="jr-card relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#1b3a70] to-[#0f2245] p-6">
-          <CartoonSparkle
-            size={14}
-            color="#ffe082"
-            className="pointer-events-none absolute right-8 top-6 opacity-90"
-          />
+        <section className="jr-card relative w-full shrink-0 overflow-hidden rounded-[28px] bg-gradient-to-br from-[#1b3a70] to-[#0f2245] p-6">
+          <CartoonSparkle size={14} color="#ffe082" className="pointer-events-none absolute right-8 top-6 opacity-90" />
           <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <span className="flex h-11 w-11 items-center justify-center rounded-2xl border-[2.5px] border-[#081326] bg-[#ffe082] shadow-[0_3px_0_0_#081326]">
                 <Pencil size={20} className="text-[#081326]" strokeWidth={2.5} />
               </span>
               <div>
-                <h1 className="text-xl font-extrabold text-white [text-shadow:0_2px_0_#081326]">
-                  Editing dream
-                </h1>
-                <p className="text-xs font-bold text-[#9bc0ed]">
-                  {dream.title || "Untitled Dream"}
-                </p>
+                <h1 className="text-xl font-extrabold text-white [text-shadow:0_2px_0_#081326]">Editing dream</h1>
+                <p className="text-xs font-bold text-[#9bc0ed]">{dream.title || "Untitled Dream"}</p>
               </div>
             </div>
-
-            <button
-              type="button"
-              onClick={() => setEditMode(false)}
-              className="jr-btn-secondary px-4 py-2.5 text-sm"
-            >
+            <button type="button" onClick={() => setEditMode(false)} className="jr-btn-secondary px-4 py-2.5 text-sm">
               <X size={15} strokeWidth={2.8} /> Cancel editing
             </button>
           </div>
         </section>
 
-        <div className="jr-form-scope">
+        <div className="jr-form-scope flex w-full flex-1 flex-col">
           <DreamForm
             mode="edit"
             dreamId={id}
@@ -216,27 +153,24 @@ export default function DreamDetailPage() {
   const { icon: MoodIcon, bg: moodBg } = getMoodStickerStyle(dream.mood);
 
   return (
-    <div
-      className="flex max-w-3xl flex-col gap-5 pb-24 text-[#eef6ff] md:pb-10"
-      style={{ fontFamily: JOURNAL_FONT }}
-    >
+    <div className={`${PAGE_SHELL} text-[#eef6ff]`} style={{ fontFamily: JOURNAL_FONT }}>
       <JournalStyles />
 
-      {/* Action bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      {/* Top Header / Action Bar */}
+      <header className="flex w-full shrink-0 flex-wrap items-center justify-between gap-3">
         <Link
           href="/journal"
-          className="jr-btn-secondary px-4 py-2.5 text-sm"
+          className="jr-btn-secondary inline-flex items-center gap-2 px-4 py-2.5 text-sm font-extrabold"
           aria-label="Back to journal"
         >
-          <ArrowLeft size={16} strokeWidth={2.8} /> Journal
+          <ArrowLeft size={16} strokeWidth={2.8} /> Back to journal
         </Link>
 
-        <div className="ml-auto flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5">
           <button
             type="button"
             onClick={() => setEditMode(true)}
-            className="jr-btn-secondary px-4 py-2.5 text-sm"
+            className="jr-btn-secondary inline-flex items-center gap-2 px-4 py-2.5 text-sm font-extrabold"
           >
             <Pencil size={15} strokeWidth={2.6} className="text-[#6bc2ff]" /> Edit
           </button>
@@ -244,18 +178,15 @@ export default function DreamDetailPage() {
             type="button"
             onClick={() => setConfirmOpen(true)}
             disabled={deleting}
-            className="jr-btn-danger px-4 py-2.5 text-sm"
+            className="jr-btn-danger inline-flex items-center gap-2 px-4 py-2.5 text-sm font-extrabold"
           >
             <Trash2 size={15} strokeWidth={2.6} /> Delete
           </button>
         </div>
-      </div>
+      </header>
 
       {deleteError && (
-        <div
-          role="alert"
-          className="jr-card flex items-center gap-3 rounded-2xl bg-[#3a2340] px-5 py-3.5 text-sm font-bold text-[#ffd2db]"
-        >
+        <div role="alert" className="jr-card flex w-full shrink-0 items-center gap-3 rounded-2xl bg-[#3a2340] px-5 py-3.5 text-sm font-bold text-[#ffd2db]">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-[#081326] bg-[#ff859d] text-[#081326]">
             <AlertTriangle size={16} strokeWidth={2.6} />
           </span>
@@ -263,39 +194,18 @@ export default function DreamDetailPage() {
         </div>
       )}
 
-      {/* Hero postcard */}
-      <section className="jr-card relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#1b3a70] via-[#152d59] to-[#0f2245] p-6 sm:p-8">
-        <div
-          className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full blur-3xl"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(91,184,255,0.26) 0%, transparent 70%)",
-          }}
-          aria-hidden="true"
-        />
-        <CartoonCloud
-          fill="#214685"
-          className="pointer-events-none absolute -bottom-7 -right-8 hidden w-48 opacity-75 sm:block"
-        />
-        <CartoonSparkle
-          size={14}
-          color="#ffe082"
-          className="pointer-events-none absolute right-10 top-7 opacity-90"
-        />
+      {/* Hero */}
+      <section className="jr-card relative w-full shrink-0 overflow-hidden rounded-[28px] bg-gradient-to-br from-[#1b3a70] via-[#152d59] to-[#0f2245] p-6 sm:p-8">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full blur-3xl"
+          style={{ background: "radial-gradient(circle, rgba(91,184,255,0.26) 0%, transparent 70%)" }} aria-hidden="true" />
+        <CartoonCloud fill="#214685" className="pointer-events-none absolute -bottom-7 -right-8 hidden w-48 opacity-75 sm:block" />
+        <CartoonSparkle size={14} color="#ffe082" className="pointer-events-none absolute right-10 top-7 opacity-90" />
 
         <div className="relative z-10">
           <div className="mb-4 flex items-center gap-3">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-[2.5px] border-[#081326] bg-[#5bb8ff] shadow-[0_3px_0_0_#081326]">
-              {TypeIcon ? (
-                <TypeIcon size={22} className="text-[#081326]" strokeWidth={2.5} />
-              ) : (
-                <Moon
-                  size={22}
-                  className="text-[#081326]"
-                  fill="#ffe082"
-                  strokeWidth={2.4}
-                />
-              )}
+              {TypeIcon ? <TypeIcon size={22} className="text-[#081326]" strokeWidth={2.5} />
+                : <Moon size={22} className="text-[#081326]" fill="#ffe082" strokeWidth={2.4} />}
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#081326] bg-[#0e2040] px-3 py-1 text-xs font-extrabold text-[#9bc0ed]">
               <CalendarDays size={12} className="text-[#64dfd0]" />
@@ -309,189 +219,119 @@ export default function DreamDetailPage() {
 
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#081326] bg-[#94adff] px-3 py-1 text-xs font-extrabold text-[#081326] shadow-[0_2px_0_0_#081326]">
-              {TypeIcon && <TypeIcon size={13} strokeWidth={2.6} />}
-              {DREAM_TYPE_LABELS[dream.dream_type]}
+              {TypeIcon && <TypeIcon size={13} strokeWidth={2.6} />}{DREAM_TYPE_LABELS[dream.dream_type]}
             </span>
-
-            <span
-              className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#081326] px-3 py-1 text-xs font-extrabold text-[#081326] shadow-[0_2px_0_0_#081326]"
-              style={{ backgroundColor: moodBg }}
-            >
-              <MoodIcon size={13} strokeWidth={2.6} />
-              {MOOD_LABELS[dream.mood]}
+            <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#081326] px-3 py-1 text-xs font-extrabold text-[#081326] shadow-[0_2px_0_0_#081326]" style={{ backgroundColor: moodBg }}>
+              <MoodIcon size={13} strokeWidth={2.6} />{MOOD_LABELS[dream.mood]}
             </span>
-
             {dream.is_lucid && (
               <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#081326] bg-[#ffe082] px-3 py-1 text-xs font-extrabold text-[#081326] shadow-[0_2px_0_0_#081326]">
                 <Sparkles size={13} strokeWidth={2.6} /> Lucid
               </span>
             )}
-
             {dream.is_recurring && (
               <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#081326] bg-[#64dfd0] px-3 py-1 text-xs font-extrabold text-[#081326] shadow-[0_2px_0_0_#081326]">
                 <Repeat size={13} strokeWidth={2.6} /> Recurring
+              </span>
+            )}
+            {dream.input_method === "voice" && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#081326] bg-[#5bb8ff] px-3 py-1 text-xs font-extrabold text-[#081326] shadow-[0_2px_0_0_#081326]">
+                <Mic size={13} strokeWidth={2.6} /> Voice note
               </span>
             )}
           </div>
         </div>
       </section>
 
-      {/* Story body */}
-      <section className="jr-card relative overflow-hidden rounded-3xl bg-[#162e59] p-6 sm:p-7">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      {/* Story body — stretches to fill */}
+      <section className="jr-card relative flex w-full flex-1 flex-col overflow-hidden rounded-3xl bg-[#162e59] p-6 sm:p-7">
+        <div className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-[#081326] bg-[#ffe082] shadow-[0_2px_0_0_#081326]">
               <Quote size={16} className="text-[#081326]" strokeWidth={2.6} />
             </span>
             <h2 className="text-lg font-extrabold text-white">The Dream</h2>
           </div>
-
           {wordCount > 0 && (
             <div className="flex items-center gap-2">
               <span className="rounded-full border-2 border-[#081326] bg-[#0e2040] px-2.5 py-1 text-[11px] font-extrabold text-[#8cb2e0]">
                 {wordCount} {wordCount === 1 ? "word" : "words"}
               </span>
               <span className="inline-flex items-center gap-1 rounded-full border-2 border-[#081326] bg-[#0e2040] px-2.5 py-1 text-[11px] font-extrabold text-[#8cb2e0]">
-                <Clock size={11} className="text-[#64dfd0]" />
-                {readMinutes} min read
+                <Clock size={11} className="text-[#64dfd0]" />{readMinutes} min read
               </span>
             </div>
           )}
         </div>
 
-        <div
-          className="rounded-2xl border-2 border-[#081326] bg-[#0e2040] p-5 text-sm font-medium text-[#cfe3fc]"
-          style={{ lineHeight: 1.85, whiteSpace: "pre-wrap" }}
-        >
+        <div className="flex-1 overflow-y-auto rounded-2xl border-2 border-[#081326] bg-[#0e2040] p-5 text-sm font-medium text-[#cfe3fc]"
+          style={{ lineHeight: 1.85, whiteSpace: "pre-wrap" }}>
           {dream.body || (
-            <span className="italic font-semibold text-[#7899c2]">
-              No description recorded for this night.
-            </span>
+            <span className="font-semibold italic text-[#7899c2]">No description recorded for this night.</span>
           )}
         </div>
       </section>
 
-      {/* Meta panels */}
-      {(dream.sleep_quality || dream.input_method === "voice") && (
-        <section className="grid gap-4 sm:grid-cols-2">
+      {/* Sleep quality & Tags */}
+      {(dream.sleep_quality || dream.tags_detail.length > 0) && (
+        <section className="flex w-full shrink-0 flex-wrap gap-4">
           {dream.sleep_quality && (
-            <div className="jr-card jr-lift rounded-3xl bg-[#152c57] p-5">
-              <p className="mb-3 text-[11px] font-extrabold uppercase tracking-widest text-[#7ea4d4]">
-                Sleep Quality
-              </p>
+            <div className="jr-card jr-lift flex-1 min-w-[240px] rounded-3xl bg-[#152c57] p-5">
+              <p className="mb-3 text-[11px] font-extrabold uppercase tracking-widest text-[#7ea4d4]">Sleep Quality</p>
               <div className="flex items-center gap-2">
                 <div className="flex gap-1.5">
                   {Array.from({ length: 5 }).map((_, i) => {
                     const lit = i < (dream.sleep_quality ?? 0);
                     return (
-                      <Star
-                        key={i}
-                        size={22}
-                        strokeWidth={2.4}
-                        style={{
-                          color: lit ? "#ffe082" : "#2c4a80",
-                          fill: lit ? "#ffe082" : "transparent",
-                        }}
-                      />
+                      <Star key={i} size={22} strokeWidth={2.4}
+                        style={{ color: lit ? "#ffe082" : "#2c4a80", fill: lit ? "#ffe082" : "transparent" }} />
                     );
                   })}
                 </div>
-                <span className="ml-1 text-sm font-extrabold text-white">
-                  {dream.sleep_quality}/5
-                </span>
+                <span className="ml-1 text-sm font-extrabold text-white">{dream.sleep_quality}/5</span>
               </div>
             </div>
           )}
 
-          {dream.input_method === "voice" && (
-            <div className="jr-card jr-lift rounded-3xl bg-[#152c57] p-5">
-              <p className="mb-3 text-[11px] font-extrabold uppercase tracking-widest text-[#7ea4d4]">
-                Captured Via
-              </p>
-              <span className="inline-flex items-center gap-2 rounded-full border-2 border-[#081326] bg-[#5bb8ff] px-3.5 py-1.5 text-xs font-extrabold text-[#081326] shadow-[0_2px_0_0_#081326]">
-                <Mic size={14} strokeWidth={2.6} /> Voice note
-              </span>
+          {dream.tags_detail.length > 0 && (
+            <div className="jr-card rounded-3xl bg-[#152c57] p-5 flex-1 min-w-[240px]">
+              <p className="mb-3 text-[11px] font-extrabold uppercase tracking-widest text-[#7ea4d4]">Tags</p>
+              <div className="flex flex-wrap gap-2">
+                {dream.tags_detail.map((tag) => (
+                  <span key={tag.id} className="inline-flex items-center gap-1 rounded-full border-2 border-[#081326] bg-[#1c396e] px-3 py-1 text-xs font-extrabold text-[#cfe3fc] shadow-[0_2px_0_0_#081326]">
+                    <Hash size={11} strokeWidth={3} className="text-[#64dfd0]" />{tag.name}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
         </section>
       )}
 
-      {/* Tags */}
-      {dream.tags_detail.length > 0 && (
-        <section className="jr-card rounded-3xl bg-[#152c57] p-5">
-          <p className="mb-3 text-[11px] font-extrabold uppercase tracking-widest text-[#7ea4d4]">
-            Tags
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {dream.tags_detail.map((tag) => (
-              <span
-                key={tag.id}
-                className="inline-flex items-center gap-1 rounded-full border-2 border-[#081326] bg-[#1c396e] px-3 py-1 text-xs font-extrabold text-[#cfe3fc] shadow-[0_2px_0_0_#081326]"
-              >
-                <Hash size={11} strokeWidth={3} className="text-[#64dfd0]" />
-                {tag.name}
-              </span>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Cartoon delete confirmation modal */}
+      {/* Delete modal */}
       {confirmOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#050b18]/80 p-5 backdrop-blur-sm"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="delete-dream-title"
-          onClick={() => !deleting && setConfirmOpen(false)}
-        >
-          <div
-            className="jr-card jr-pop w-full max-w-sm rounded-[26px] bg-[#162e59] p-6 text-center"
-            style={{ fontFamily: JOURNAL_FONT }}
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#050b18]/80 p-5 backdrop-blur-sm"
+          role="dialog" aria-modal="true" aria-labelledby="delete-dream-title"
+          onClick={() => !deleting && setConfirmOpen(false)}>
+          <div className="jr-card jr-pop w-full max-w-sm rounded-[26px] bg-[#162e59] p-6 text-center"
+            style={{ fontFamily: JOURNAL_FONT }} onClick={(e) => e.stopPropagation()}>
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border-[2.5px] border-[#081326] bg-[#ff859d] shadow-[0_4px_0_0_#081326]">
               <Trash2 size={24} className="text-[#081326]" strokeWidth={2.5} />
             </div>
-
-            <h3
-              id="delete-dream-title"
-              className="mb-2 text-xl font-extrabold text-white [text-shadow:0_2px_0_#081326]"
-            >
+            <h3 id="delete-dream-title" className="mb-2 text-xl font-extrabold text-white [text-shadow:0_2px_0_#081326]">
               Delete this dream?
             </h3>
             <p className="mb-6 text-sm font-semibold leading-relaxed text-[#b8d2f4]">
-              <span className="font-extrabold text-white">
-                “{dream.title || "Untitled Dream"}”
-              </span>{" "}
-              will be removed from your storybook permanently. This can&apos;t be
-              undone.
+              <span className="font-extrabold text-white">“{dream.title || "Untitled Dream"}”</span>{" "}
+              will be removed from your storybook permanently. This can&apos;t be undone.
             </p>
-
             <div className="flex flex-col gap-2.5 sm:flex-row">
-              <button
-                type="button"
-                onClick={() => setConfirmOpen(false)}
-                disabled={deleting}
-                className="jr-btn-secondary flex-1 px-4 py-3 text-sm"
-              >
+              <button type="button" onClick={() => setConfirmOpen(false)} disabled={deleting} className="jr-btn-secondary flex-1 px-4 py-3 text-sm">
                 Keep it
               </button>
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={deleting}
-                className="jr-btn-danger flex-1 px-4 py-3 text-sm"
-              >
-                {deleting ? (
-                  <>
-                    <Loader2 size={15} className="animate-spin" /> Deleting…
-                  </>
-                ) : (
-                  <>
-                    <Trash2 size={15} strokeWidth={2.6} /> Delete forever
-                  </>
-                )}
+              <button type="button" onClick={handleDelete} disabled={deleting} className="jr-btn-danger flex-1 px-4 py-3 text-sm">
+                {deleting ? <><Loader2 size={15} className="animate-spin" /> Deleting…</>
+                  : <><Trash2 size={15} strokeWidth={2.6} /> Delete forever</>}
               </button>
             </div>
           </div>
