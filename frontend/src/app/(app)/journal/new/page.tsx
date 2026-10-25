@@ -9,7 +9,6 @@ import {
   JOURNAL_FONT,
 } from "@/components/JournalTheme";
 
-// This page uses Date() client-side and must not be statically prerendered
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
@@ -18,114 +17,74 @@ export const metadata: Metadata = {
 };
 
 const TIPS = [
-  {
-    icon: Feather,
-    bg: "#5bb8ff",
-    title: "Write freely",
-    desc: "Fragments count — colors, faces, and feelings are enough.",
-  },
-  {
-    icon: Tag,
-    bg: "#64dfd0",
-    title: "Tag the mood",
-    desc: "Moods and themes power your pattern map later on.",
-  },
-  {
-    icon: Mic,
-    bg: "#ffe082",
-    title: "Too sleepy?",
-    desc: "Speak it out loud and tidy up the details later.",
-  },
+  { icon: Feather, bg: "#5bb8ff", title: "Write freely", desc: "Fragments count — colors, faces, and feelings are enough." },
+  { icon: Tag, bg: "#64dfd0", title: "Tag the mood", desc: "Moods and themes power your pattern map later on." },
+  { icon: Mic, bg: "#ffe082", title: "Too sleepy?", desc: "Speak it out loud and tidy up the details later." },
 ];
 
 export default function NewDreamPage() {
   return (
     <div
-      className="flex max-w-3xl flex-col gap-5 pb-24 text-[#eef6ff] md:pb-10"
+      className="flex h-full min-h-[calc(100dvh-5.5rem)] w-full flex-col gap-4 text-[#eef6ff]"
       style={{ fontFamily: JOURNAL_FONT }}
     >
       <JournalStyles />
 
       {/* Back control */}
-      <div>
+      <div className="shrink-0">
         <Link
           href="/journal"
-          className="jr-btn-secondary px-4 py-2.5 text-sm"
+          className="jr-btn-secondary inline-flex items-center gap-2 px-4 py-2.5 text-sm"
           aria-label="Back to journal"
         >
           <ArrowLeft size={16} strokeWidth={2.8} /> Journal
         </Link>
       </div>
 
-      {/* Illustrated banner */}
-      <section className="jr-card relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#1b3a70] via-[#152d59] to-[#0f2245] p-6 sm:p-8">
+      {/* Illustrated banner - w-full */}
+      <section className="jr-card relative flex w-full shrink-0 flex-col overflow-hidden rounded-[28px] bg-gradient-to-br from-[#1b3a70] via-[#152d59] to-[#0f2245] p-6 sm:p-8">
         <div
           className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full blur-3xl"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(91,184,255,0.28) 0%, transparent 70%)",
-          }}
+          style={{ background: "radial-gradient(circle, rgba(91,184,255,0.28) 0%, transparent 70%)" }}
           aria-hidden="true"
         />
-        <CartoonCloud
-          fill="#214685"
-          className="pointer-events-none absolute -bottom-7 -right-8 hidden w-52 opacity-80 sm:block"
-        />
-        <CartoonSparkle
-          size={15}
-          color="#ffe082"
-          className="pointer-events-none absolute right-10 top-7 opacity-90"
-        />
-        <CartoonSparkle
-          size={11}
-          color="#64dfd0"
-          className="pointer-events-none absolute right-28 top-16 hidden opacity-75 sm:block"
-        />
+        <CartoonCloud fill="#214685" className="pointer-events-none absolute -bottom-7 -right-8 hidden w-52 opacity-80 sm:block" />
+        <CartoonSparkle size={15} color="#ffe082" className="pointer-events-none absolute right-10 top-7 opacity-90" />
+        <CartoonSparkle size={11} color="#64dfd0" className="pointer-events-none absolute right-28 top-16 hidden opacity-75 sm:block" />
 
-        <div className="relative z-10 max-w-lg">
+        <div className="relative z-10 max-w-2xl">
           <span className="mb-3 inline-flex items-center gap-1.5 rounded-full border-2 border-[#081326] bg-[#0e2040] px-3 py-1 text-xs font-extrabold text-[#7ac8ff] shadow-[0_2px_0_0_#081326]">
             <Sparkles size={13} className="text-[#ffe082]" />
             Fresh page
           </span>
-
-          <h1 className="mb-2 text-2xl font-extrabold tracking-tight text-white [text-shadow:0_3px_0_#081326] sm:text-4xl">
+          <h1 className="mb-2 text-2xl font-extrabold tracking-tight text-white [text-shadow:0_3px_0_#081326] sm:text-3xl">
             Capture tonight&apos;s dream
           </h1>
-
           <p className="text-sm font-semibold leading-relaxed text-[#bad4f7]">
-            Write it down while it&apos;s still vivid — details fade within
-            minutes of waking. Nothing here is shared; this page is yours alone.
+            Write it down while it&apos;s still vivid — details fade within minutes of waking. Nothing here is shared; this page is yours alone.
           </p>
         </div>
       </section>
 
-      {/* Recall tips */}
-      <section className="grid gap-3 sm:grid-cols-3">
+      {/* Recall tips - w-full */}
+      <section className="grid w-full shrink-0 gap-3 sm:grid-cols-3">
         {TIPS.map(({ icon: Icon, bg, title, desc }) => (
-          <div
-            key={title}
-            className="jr-card jr-lift flex flex-col gap-2 rounded-2xl bg-[#152c57] p-4"
-          >
-            <span
-              className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-[#081326] shadow-[0_2px_0_0_#081326]"
-              style={{ backgroundColor: bg }}
-            >
+          <div key={title} className="jr-card jr-lift flex flex-col gap-2 rounded-2xl bg-[#152c57] p-4">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-[#081326] shadow-[0_2px_0_0_#081326]" style={{ backgroundColor: bg }}>
               <Icon size={18} className="text-[#081326]" strokeWidth={2.5} />
             </span>
             <h2 className="text-sm font-extrabold text-white">{title}</h2>
-            <p className="text-xs font-semibold leading-relaxed text-[#9bc0ed]">
-              {desc}
-            </p>
+            <p className="text-xs font-semibold leading-relaxed text-[#9bc0ed]">{desc}</p>
           </div>
         ))}
       </section>
 
-      {/* The form — re-skinned by .jr-form-scope */}
-      <div className="jr-form-scope">
+      {/* The form - fills remaining height/width */}
+      <div className="flex w-full flex-1 flex-col">
         <DreamForm mode="new" />
       </div>
 
-      <p className="flex items-center justify-center gap-2 text-center text-[11px] font-bold text-[#7ea4d4]">
+      <p className="flex shrink-0 items-center justify-center gap-2 py-2 text-center text-[11px] font-bold text-[#7ea4d4]">
         <CartoonSparkle size={11} color="#ffe082" />
         Entries stay private to your account
         <CartoonSparkle size={11} color="#64dfd0" />

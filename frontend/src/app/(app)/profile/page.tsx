@@ -32,10 +32,6 @@ import { getSupabaseClient } from "@/lib/supabase";
 import type { DashboardSummary, UserProfile } from "@/types";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
-/* ------------------------------------------------------------------ */
-/*  Constants                                                          */
-/* ------------------------------------------------------------------ */
-
 const BIO_MAX = 280;
 const FONT = "'Quicksand', ui-rounded, 'Nunito', sans-serif";
 
@@ -68,10 +64,6 @@ const RANKS = [
   { min: 50, title: "Astral Master",     tier: "V",   color: "#ffe082" },
 ];
 
-/* ------------------------------------------------------------------ */
-/*  Decorations                                                        */
-/* ------------------------------------------------------------------ */
-
 function CartoonCloud({ className = "", fill = "#214685" }: { className?: string; fill?: string }) {
   return (
     <svg viewBox="0 0 220 90" fill="none" className={className} aria-hidden="true">
@@ -93,21 +85,12 @@ function CartoonStar({ size = 14, color = "#ffe082", className = "" }: { size?: 
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Styles                                                             */
-/* ------------------------------------------------------------------ */
-
 function Styles() {
   return (
     <style>{`
       .pcard {
         border: 2.5px solid #081326;
         box-shadow: 0 5px 0 0 #081326, inset 0 2px 0 0 rgba(255,255,255,0.12);
-      }
-      .plift { transition: transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .18s ease; }
-      .plift:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 0 0 #081326, inset 0 2px 0 0 rgba(255,255,255,0.18);
       }
       .pbtn {
         display: inline-flex; align-items: center; justify-content: center;
@@ -145,26 +128,17 @@ function Styles() {
         transition: transform .14s ease, background .14s ease, border-color .14s ease;
       }
       .pchoice:hover { transform: translateY(-2px); }
-      @keyframes pfloat {
-        0%,100%{ transform: translateY(0) rotate(-1deg); }
-        50%{ transform: translateY(-7px) rotate(1deg); }
-      }
       @keyframes ptwinkle {
         0%,100%{ opacity:.4; transform: scale(.85); }
         50%{ opacity:1; transform: scale(1.15); }
       }
-      .pfloat { animation: pfloat 6s ease-in-out infinite; }
       .ptwinkle { animation: ptwinkle 3s ease-in-out infinite; }
       @media(prefers-reduced-motion:reduce){
-        .plift,.pbtn,.pchoice,.pfloat,.ptwinkle{ transition:none!important; animation:none!important; }
+        .pbtn,.pchoice,.ptwinkle{ transition:none!important; animation:none!important; }
       }
     `}</style>
   );
 }
-
-/* ------------------------------------------------------------------ */
-/*  Component                                                          */
-/* ------------------------------------------------------------------ */
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -228,7 +202,6 @@ export default function ProfilePage() {
     return () => clearTimeout(t);
   }, [saveOk]);
 
-  /* ---- derived (profile-only) ---- */
   const displayName =
     profile?.display_name ||
     authUser?.user_metadata?.full_name ||
@@ -260,7 +233,6 @@ export default function ProfilePage() {
   const activeIntention = INTENTIONS.find((i) => i.id === intention) || INTENTIONS[0];
   const activeRitual = RITUALS.find((r) => r.id === ritual) || RITUALS[0];
 
-  /* ---- actions ---- */
   function startEdit() {
     setEditing(true);
     setSaveErr(null);
@@ -271,7 +243,6 @@ export default function ProfilePage() {
       dream_intention: intention,
       recall_habit: ritual,
     });
-    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function cancelEdit() {
@@ -306,17 +277,16 @@ export default function ProfilePage() {
     }
   }
 
-  /* ---- skeleton ---- */
   if (loading) {
     return (
-      <div className="mx-auto flex max-w-5xl flex-col gap-5 pb-24" style={{ fontFamily: FONT }}>
+      <div className="flex h-full min-h-[calc(100dvh-5.5rem)] w-full flex-col gap-4" style={{ fontFamily: FONT }}>
         <Styles />
-        <div className="h-10 w-56 animate-pulse rounded-xl bg-[#152c57]" />
-        <div className="grid gap-5 lg:grid-cols-[340px_1fr]">
-          <div className="pcard h-96 animate-pulse rounded-3xl bg-[#162e59]" />
-          <div className="flex flex-col gap-5">
-            <div className="pcard h-40 animate-pulse rounded-3xl bg-[#152c57]" />
-            <div className="pcard h-56 animate-pulse rounded-3xl bg-[#152c57]" />
+        <div className="h-12 w-64 animate-pulse rounded-2xl bg-[#152c57]" />
+        <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]">
+          <div className="pcard h-full animate-pulse rounded-3xl bg-[#162e59]" />
+          <div className="flex h-full flex-col gap-4">
+            <div className="pcard flex-1 animate-pulse rounded-3xl bg-[#152c57]" />
+            <div className="pcard h-44 animate-pulse rounded-3xl bg-[#152c57]" />
           </div>
         </div>
       </div>
@@ -324,14 +294,16 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-6 pb-24 text-[#eef6ff] md:pb-10" style={{ fontFamily: FONT }}>
+    <div
+      className="flex h-full min-h-[calc(100dvh-5.5rem)] w-full flex-col gap-4 text-[#eef6ff]"
+      style={{ fontFamily: FONT }}
+    >
       <Styles />
 
-      {/* top bar */}
-      <header className="flex flex-wrap items-center justify-between gap-3">
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-xl border-2 border-[#081326] bg-[#132952] shadow-[0_2px_0_0_#081326]">
-            <UserRound size={15} className="text-[#7ac8ff]" strokeWidth={2.5} />
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-[#081326] bg-[#132952] shadow-[0_2px_0_0_#081326]">
+            <UserRound size={16} className="text-[#7ac8ff]" strokeWidth={2.5} />
           </span>
           <div>
             <h1 className="text-xl font-extrabold tracking-tight text-white sm:text-2xl">
@@ -348,22 +320,16 @@ export default function ProfilePage() {
         </Link>
       </header>
 
-      {/* main layout: left identity rail + right content */}
-      <div className="grid items-start gap-5 lg:grid-cols-[340px_1fr]">
-
-        {/* ═══════════════════════════════════════════════════════════ */}
-        {/* LEFT — identity rail (sticky)                              */}
-        {/* ═══════════════════════════════════════════════════════════ */}
-        <aside className="flex flex-col gap-5 lg:sticky lg:top-6">
-          <section className="pcard relative overflow-hidden rounded-[26px] bg-gradient-to-b from-[#1d3f78] via-[#162f5e] to-[#0e2040] p-6 text-center">
-            {/* decorations */}
+      <div className="grid min-h-0 flex-1 items-stretch gap-4 lg:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]">
+        {/* LEFT — identity, stretches with the right column */}
+        <aside className="flex min-h-0">
+          <section className="pcard relative flex w-full flex-col overflow-hidden rounded-[26px] bg-gradient-to-b from-[#1d3f78] via-[#162f5e] to-[#0e2040] p-5 text-center sm:p-6">
             <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-[#5bb8ff]/15 blur-2xl" aria-hidden="true" />
-            <CartoonCloud fill="#1f4280" className="pointer-events-none absolute -bottom-6 -left-6 w-32 opacity-70" />
+            <CartoonCloud fill="#1f4280" className="pointer-events-none absolute -bottom-8 -left-8 w-36 opacity-70" />
             <CartoonStar size={15} color="#ffe082" className="ptwinkle pointer-events-none absolute right-6 top-6" />
             <CartoonStar size={10} color="#64dfd0" className="ptwinkle pointer-events-none absolute left-7 top-16" />
 
-            <div className="relative z-10">
-              {/* avatar */}
+            <div className="relative z-10 flex h-full flex-col">
               <div className="relative mx-auto mb-4 w-fit">
                 <div
                   className="flex h-24 w-24 items-center justify-center rounded-3xl border-[3px] border-[#081326] text-4xl font-extrabold text-[#081326] shadow-[0_5px_0_0_#081326]"
@@ -380,7 +346,6 @@ export default function ProfilePage() {
                 </span>
               </div>
 
-              {/* name + edit */}
               <div className="flex items-center justify-center gap-2">
                 <h2 className="break-words text-xl font-extrabold tracking-tight text-white [text-shadow:0_2px_0_#081326]">
                   {displayName}
@@ -397,10 +362,7 @@ export default function ProfilePage() {
                 )}
               </div>
 
-              {email && <p className="mt-1 truncate text-xs font-semibold text-[#a9c7ec]">{email}</p>}
-
-              {/* rank pill */}
-              <div className="mt-4 flex flex-col items-center gap-2">
+              <div className="mt-3 flex flex-col items-center gap-2">
                 <span
                   className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#081326] bg-[#0e2040] px-3 py-1 text-[11px] font-extrabold shadow-[0_2px_0_0_#081326]"
                   style={{ color: rank.color }}
@@ -414,19 +376,17 @@ export default function ProfilePage() {
                 )}
               </div>
 
-              {/* divider */}
               <div className="my-5 h-[2px] w-full rounded-full bg-[#081326]/50" />
 
-              {/* account rows */}
               <dl className="flex flex-col gap-2 text-left">
-                <div className="flex items-center gap-2.5 rounded-xl border-2 border-[#081326] bg-[#0e2040] px-3 py-2">
+                <div className="flex items-center gap-2.5 rounded-xl border-2 border-[#081326] bg-[#0e2040] px-3 py-2.5">
                   <Mail size={14} className="shrink-0 text-[#7ac8ff]" />
                   <div className="min-w-0">
                     <dt className="text-[9px] font-extrabold uppercase tracking-wider text-[#7899c2]">Email</dt>
                     <dd className="truncate text-xs font-extrabold text-white">{email || "—"}</dd>
                   </div>
                 </div>
-                <div className="flex items-center gap-2.5 rounded-xl border-2 border-[#081326] bg-[#0e2040] px-3 py-2">
+                <div className="flex items-center gap-2.5 rounded-xl border-2 border-[#081326] bg-[#0e2040] px-3 py-2.5">
                   <Lock size={14} className="shrink-0 text-[#64dfd0]" />
                   <div className="min-w-0">
                     <dt className="text-[9px] font-extrabold uppercase tracking-wider text-[#7899c2]">Privacy</dt>
@@ -435,43 +395,37 @@ export default function ProfilePage() {
                 </div>
               </dl>
 
-              {/* buttons */}
-              <div className="mt-5 flex flex-col gap-2.5">
+              <div className="mt-auto flex flex-col gap-2.5 pt-5">
                 <button type="button" onClick={startEdit} className="pbtn pbtn-sky w-full px-4 py-2.5 text-sm">
                   <Edit3 size={15} /> Edit profile
                 </button>
                 <Link href="/settings" className="pbtn pbtn-navy w-full px-4 py-2.5 text-sm">
                   <Settings size={15} /> Account settings
                 </Link>
+
+                <div className="mt-1 flex items-start gap-2.5 rounded-2xl border-2 border-[#081326] bg-[#0e2040]/80 p-3 text-left">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-[#081326] bg-[#64dfd0] shadow-[0_2px_0_0_#081326]">
+                    <ShieldCheck size={14} className="text-[#081326]" strokeWidth={2.5} />
+                  </span>
+                  <p className="text-[11px] font-medium leading-relaxed text-[#a9c7ec]">
+                    Your bio, preferences, and dreams stay private to your account.
+                  </p>
+                </div>
               </div>
             </div>
           </section>
-
-          {/* privacy note */}
-          <section className="pcard flex gap-3 rounded-3xl bg-[#132952] p-4">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border-2 border-[#081326] bg-[#64dfd0] shadow-[0_2px_0_0_#081326]">
-              <ShieldCheck size={16} className="text-[#081326]" strokeWidth={2.5} />
-            </span>
-            <p className="text-xs font-medium leading-relaxed text-[#a9c7ec]">
-              Your bio, preferences, and dreams stay private to your account.
-            </p>
-          </section>
         </aside>
 
-        {/* ═══════════════════════════════════════════════════════════ */}
-        {/* RIGHT — editable content                                    */}
-        {/* ═══════════════════════════════════════════════════════════ */}
-        <div className="flex flex-col gap-5">
-
+        {/* RIGHT — fills remaining width and height */}
+        <div className="flex min-h-0 min-w-0 flex-col gap-4">
           {saveOk && (
-            <div className="flex items-center gap-2.5 rounded-2xl border-2 border-[#081326] bg-[#64dfd0]/15 px-4 py-3 text-sm font-extrabold text-[#64dfd0]">
+            <div className="flex shrink-0 items-center gap-2.5 rounded-2xl border-2 border-[#081326] bg-[#64dfd0]/15 px-4 py-3 text-sm font-extrabold text-[#64dfd0]">
               <Check size={16} strokeWidth={3} /> Your profile was updated.
             </div>
           )}
 
           {editing ? (
-            /* ---- EDIT FORM ---- */
-            <section className="pcard rounded-3xl bg-[#152c57] p-5 sm:p-7">
+            <section className="pcard flex min-h-0 flex-1 flex-col overflow-auto rounded-3xl bg-[#152c57] p-5 sm:p-6">
               <div className="mb-5 flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <span className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-[#081326] bg-[#5bb8ff] shadow-[0_2px_0_0_#081326]">
@@ -493,8 +447,7 @@ export default function ProfilePage() {
                 </button>
               </div>
 
-              <div className="grid gap-6">
-                {/* name */}
+              <div className="grid flex-1 content-start gap-5">
                 <div>
                   <label htmlFor="ed-name" className="mb-2 block text-sm font-extrabold text-[#cfe3fc]">Display name</label>
                   <input
@@ -507,8 +460,7 @@ export default function ProfilePage() {
                   />
                 </div>
 
-                {/* bio */}
-                <div>
+                <div className="flex min-h-0 flex-1 flex-col">
                   <div className="mb-2 flex items-center justify-between">
                     <label htmlFor="ed-bio" className="text-sm font-extrabold text-[#cfe3fc]">About you</label>
                     <span className="text-xs font-bold text-[#6a8ec4]">{draft.bio.length}/{BIO_MAX}</span>
@@ -517,13 +469,12 @@ export default function ProfilePage() {
                     id="ed-bio"
                     value={draft.bio}
                     onChange={(e) => d("bio", e.target.value.slice(0, BIO_MAX))}
-                    className="pinput min-h-32 resize-y p-4 text-sm leading-relaxed"
+                    className="pinput min-h-36 flex-1 resize-y p-4 text-sm leading-relaxed"
                     placeholder="A few words about your dream world, your favourite symbols, or what you hope to discover here…"
                     maxLength={BIO_MAX}
                   />
                 </div>
 
-                {/* intention */}
                 <fieldset>
                   <legend className="mb-2.5 text-sm font-extrabold text-[#cfe3fc]">Dream intention</legend>
                   <div className="grid gap-2.5 sm:grid-cols-2">
@@ -551,7 +502,6 @@ export default function ProfilePage() {
                   </div>
                 </fieldset>
 
-                {/* ritual */}
                 <fieldset>
                   <legend className="mb-2.5 text-sm font-extrabold text-[#cfe3fc]">Morning recall ritual</legend>
                   <div className="grid gap-2 sm:grid-cols-2">
@@ -578,7 +528,7 @@ export default function ProfilePage() {
                   <p role="alert" className="rounded-xl border-2 border-[#ff859d]/40 bg-[#ff859d]/10 px-4 py-3 text-sm font-bold text-[#ffd2db]">{saveErr}</p>
                 )}
 
-                <div className="flex flex-wrap gap-3 border-t-2 border-[#081326]/40 pt-5">
+                <div className="mt-auto flex flex-wrap gap-3 border-t-2 border-[#081326]/40 pt-5">
                   <button type="button" onClick={save} disabled={saving} className="pbtn pbtn-sky px-6 py-3 text-sm">
                     {saving ? <><Loader2 size={16} className="animate-spin" /> Saving…</> : <><Check size={16} strokeWidth={2.8} /> Save profile</>}
                   </button>
@@ -588,8 +538,7 @@ export default function ProfilePage() {
             </section>
           ) : (
             <>
-              {/* ---- ABOUT / BIO ---- */}
-              <section className="pcard rounded-3xl bg-[#152c57] p-5 sm:p-6">
+              <section className="pcard flex min-h-0 flex-1 flex-col rounded-3xl bg-[#152c57] p-5 sm:p-6">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <span className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-[#081326] bg-[#5bb8ff] shadow-[0_2px_0_0_#081326]">
@@ -610,13 +559,13 @@ export default function ProfilePage() {
                 </div>
 
                 {bio ? (
-                  <p className="rounded-2xl border-2 border-[#081326] bg-[#0e2040] p-4 text-sm font-medium leading-relaxed text-[#cfe3fc]">
+                  <p className="flex-1 rounded-2xl border-2 border-[#081326] bg-[#0e2040] p-5 text-sm font-medium leading-relaxed text-[#cfe3fc]">
                     {bio}
                   </p>
                 ) : (
-                  <div className="rounded-2xl border-2 border-dashed border-[#365783] bg-[#0e2040] p-5">
+                  <div className="flex flex-1 flex-col justify-center rounded-2xl border-2 border-dashed border-[#365783] bg-[#0e2040] p-6">
                     <p className="text-sm font-extrabold text-white">Your profile has room for a story.</p>
-                    <p className="mt-1 text-xs font-medium leading-relaxed text-[#9bc0ed]">
+                    <p className="mt-1 max-w-lg text-xs font-medium leading-relaxed text-[#9bc0ed]">
                       Add a short bio about your dream practice, your favourite dream symbols,
                       or what you want to discover here.
                     </p>
@@ -631,9 +580,8 @@ export default function ProfilePage() {
                 )}
               </section>
 
-              {/* ---- DREAM PRACTICE ---- */}
-              <section className="pcard rounded-3xl bg-[#152c57] p-5 sm:p-6">
-                <div className="mb-5 flex items-center justify-between gap-3">
+              <section className="pcard shrink-0 rounded-3xl bg-[#152c57] p-5 sm:p-6">
+                <div className="mb-4 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <span className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-[#081326] bg-[#64dfd0] shadow-[0_2px_0_0_#081326]">
                       <Compass size={18} className="text-[#081326]" strokeWidth={2.5} />
@@ -652,7 +600,7 @@ export default function ProfilePage() {
                   </button>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-2xl border-2 border-[#081326] bg-[#0e2040] p-4">
                     <p className="mb-3 text-[10px] font-extrabold uppercase tracking-[.14em] text-[#7899c2]">Intention</p>
                     <div className="flex items-center gap-3">

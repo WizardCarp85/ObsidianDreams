@@ -10,7 +10,6 @@ import {
   Star,
   X,
   Plus,
-  ArrowLeft,
   Sparkles,
   Repeat,
   Calendar,
@@ -28,9 +27,7 @@ import {
 import { dreamsApi } from "@/lib/api";
 import type { DreamType, Mood, DreamFormData } from "@/types";
 import {
-  DREAM_TYPES,
   DREAM_TYPE_LABELS,
-  DREAM_TYPE_ICONS,
   MOOD_LABELS,
   getYesterdayDateString,
 } from "@/lib/utils";
@@ -175,22 +172,22 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col gap-6 max-w-3xl text-[#eef6ff]"
+      className="flex w-full flex-col gap-4 text-[#eef6ff]"
       style={{ fontFamily: "'Quicksand', ui-rounded, 'Nunito', sans-serif" }}
     >
       <style>{`
         .cartoon-form-card {
           border: 2.5px solid #081326;
-          box-shadow: 0 6px 0 0 #081326, inset 0 2px 0 0 rgba(255, 255, 255, 0.14);
+          box-shadow: 0 5px 0 0 #081326, inset 0 2px 0 0 rgba(255, 255, 255, 0.12);
         }
         .cartoon-form-input {
           width: 100%;
           border: 2.5px solid #081326;
-          border-radius: 1rem;
+          border-radius: 0.9rem;
           background: #0f2040;
           color: #eef6ff;
           font-weight: 600;
-          padding: 0.75rem 1rem;
+          padding: 0.65rem 0.9rem;
           outline: none;
           transition: border-color 0.16s ease, box-shadow 0.16s ease;
         }
@@ -239,17 +236,17 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
       `}</style>
 
       {/* Main Storybook Form Card */}
-      <div className="cartoon-form-card rounded-[28px] bg-[#162e59] p-6 sm:p-8 space-y-6">
+      <div className="cartoon-form-card rounded-[26px] bg-[#162e59] p-5 sm:p-6">
         {/* Input Mode Selector */}
-        <div className="flex items-center justify-between gap-4 flex-wrap pb-2 border-b-2 border-[#081326]/50">
+        <div className="flex items-center justify-between gap-4 flex-wrap pb-3 border-b-2 border-[#081326]/50">
           <div>
-            <span className="block text-xs font-extrabold uppercase tracking-wider text-[#7ea4d4]">
+            <span className="block text-[10px] font-extrabold uppercase tracking-wider text-[#7ea4d4]">
               Recording Style
             </span>
             <span className="text-sm font-bold text-white">How do you want to record?</span>
           </div>
 
-          <div className="inline-flex rounded-2xl border-2 border-[#081326] bg-[#0e2040] p-1 shadow-[0_2px_0_0_#081326]">
+          <div className="inline-flex rounded-xl border-2 border-[#081326] bg-[#0e2040] p-1 shadow-[0_2px_0_0_#081326]">
             {(["type", "speak"] as const).map((m) => {
               const active = inputMode === m;
               return (
@@ -260,17 +257,13 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
                     setInputMode(m);
                     update("input_method", m === "speak" ? "voice" : "text");
                   }}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all ${
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-extrabold transition-all ${
                     active
                       ? "bg-[#5bb8ff] text-[#081326] border-2 border-[#081326] shadow-[0_2px_0_0_#081326]"
                       : "text-[#8cb2e0] hover:text-white border-2 border-transparent"
                   }`}
                 >
-                  {m === "type" ? (
-                    <Type size={14} strokeWidth={2.8} />
-                  ) : (
-                    <Mic size={14} strokeWidth={2.8} />
-                  )}
+                  {m === "type" ? <Type size={13} strokeWidth={2.8} /> : <Mic size={13} strokeWidth={2.8} />}
                   {m === "type" ? "Type it out" : "Speak it out"}
                 </button>
               );
@@ -279,8 +272,8 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
         </div>
 
         {/* Title Field */}
-        <div>
-          <label htmlFor="dream-title" className="block text-sm font-extrabold text-[#cfe3fc] mb-2">
+        <div className="mt-4">
+          <label htmlFor="dream-title" className="block text-sm font-extrabold text-[#cfe3fc] mb-1.5">
             Dream Title <span className="text-[#ffe082]">*</span>
           </label>
           <input
@@ -295,28 +288,28 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
         </div>
 
         {/* Dream Body / Voice Panel */}
-        <div>
-          <label htmlFor="dream-body" className="block text-sm font-extrabold text-[#cfe3fc] mb-2">
+        <div className="mt-4">
+          <label htmlFor="dream-body" className="block text-sm font-extrabold text-[#cfe3fc] mb-1.5">
             What happened in the dream? <span className="text-[#ffe082]">*</span>
           </label>
 
           {inputMode === "speak" ? (
-            <div className="rounded-3xl border-2 border-[#081326] bg-[#0e2040] p-6 flex flex-col items-center gap-5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]">
+            <div className="rounded-2xl border-2 border-[#081326] bg-[#0e2040] p-4 flex flex-col items-center gap-4 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]">
               <VoiceRecorderButton onTranscript={handleVoiceTranscript} />
 
               <div className="w-full">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-extrabold uppercase tracking-wider text-[#7ea4d4]">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#7ea4d4]">
                     Live Transcript (Editable)
                   </span>
-                  <span className="text-[11px] font-bold text-[#64dfd0]">Voice detected</span>
+                  <span className="text-[10px] font-bold text-[#64dfd0]">Voice detected</span>
                 </div>
                 <textarea
                   id="dream-body-voice"
                   value={form.body}
                   onChange={(e) => handleBodyChange(e.target.value)}
                   className="cartoon-form-input text-sm leading-relaxed"
-                  rows={6}
+                  rows={5}
                   placeholder="Your words will transcribe here as you speak…"
                   style={{ resize: "vertical" }}
                 />
@@ -328,7 +321,7 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
               value={form.body}
               onChange={(e) => handleBodyChange(e.target.value)}
               className="cartoon-form-input text-sm leading-relaxed"
-              rows={8}
+              rows={6}
               placeholder="Describe your dream in as much detail as you recall: colors, people, feelings, floating moments…"
               style={{ resize: "vertical" }}
               required
@@ -337,11 +330,11 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
         </div>
 
         {/* Date + Dream Type Row */}
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className="grid sm:grid-cols-2 gap-3 mt-4">
           <div>
-            <label htmlFor="dream-date" className="block text-sm font-extrabold text-[#cfe3fc] mb-2">
+            <label htmlFor="dream-date" className="block text-sm font-extrabold text-[#cfe3fc] mb-1.5">
               <span className="inline-flex items-center gap-1.5">
-                <Calendar size={14} className="text-[#64dfd0]" /> Dream Date
+                <Calendar size={13} className="text-[#64dfd0]" /> Dream Date
               </span>
             </label>
             <CartoonDatePicker
@@ -352,7 +345,7 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
           </div>
 
           <div>
-            <label htmlFor="dream-type" className="block text-sm font-extrabold text-[#cfe3fc] mb-2">
+            <label htmlFor="dream-type" className="block text-sm font-extrabold text-[#cfe3fc] mb-1.5">
               Dream Type
             </label>
             <CartoonDreamTypeSelect
@@ -364,11 +357,11 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
         </div>
 
         {/* Mood Picker */}
-        <div>
-          <label className="block text-sm font-extrabold text-[#cfe3fc] mb-2.5">
+        <div className="mt-4">
+          <label className="block text-sm font-extrabold text-[#cfe3fc] mb-2">
             How did the dream feel?
           </label>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {MOOD_OPTIONS.map((m) => {
               const cfg = MOOD_CONFIG[m];
               const Icon = cfg.icon;
@@ -378,14 +371,14 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
                   key={m}
                   type="button"
                   onClick={() => update("mood", m)}
-                  className={`inline-flex items-center gap-1.5 rounded-full border-2 border-[#081326] px-3.5 py-1.5 text-xs font-extrabold transition-transform ${
+                  className={`inline-flex items-center gap-1.5 rounded-full border-2 border-[#081326] px-3 py-1.5 text-xs font-extrabold transition-transform ${
                     active
                       ? "scale-105 shadow-[0_3px_0_0_#081326] text-[#081326]"
                       : "bg-[#0e2040] text-[#cfe3fc] hover:scale-102"
                   }`}
                   style={{ backgroundColor: active ? cfg.bg : undefined }}
                 >
-                  <Icon size={13} strokeWidth={2.6} />
+                  <Icon size={12} strokeWidth={2.6} />
                   <span>{MOOD_LABELS[m]}</span>
                 </button>
               );
@@ -394,8 +387,8 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
         </div>
 
         {/* Sleep Quality */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
+        <div className="mt-4">
+          <div className="flex items-center justify-between mb-1.5">
             <label className="block text-sm font-extrabold text-[#cfe3fc]">
               Sleep Quality (1 - 5)
             </label>
@@ -404,7 +397,7 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {[1, 2, 3, 4, 5].map((v) => {
               const activeVal = hoverRating ?? form.sleep_quality ?? 0;
               const isLit = activeVal >= v;
@@ -416,10 +409,10 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
                   onMouseLeave={() => setHoverRating(null)}
                   onClick={() => update("sleep_quality", form.sleep_quality === v ? null : v)}
                   aria-label={`Rate sleep quality ${v} of 5`}
-                  className="p-1 rounded-xl hover:scale-110 active:scale-95 transition-transform"
+                  className="p-1 rounded-lg hover:scale-110 active:scale-95 transition-transform"
                 >
                   <Star
-                    size={28}
+                    size={26}
                     strokeWidth={2.4}
                     style={{
                       color: isLit ? "#ffe082" : "#244275",
@@ -433,10 +426,10 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
         </div>
 
         {/* Cartoon Checkbox Toggles: Lucid & Recurring */}
-        <div className="grid sm:grid-cols-2 gap-3 pt-2">
+        <div className="grid sm:grid-cols-2 gap-2.5 mt-4">
           {/* Lucid Dream Toggle Card */}
           <label
-            className={`group relative flex items-center justify-between p-3.5 rounded-2xl border-[2.5px] border-[#081326] cursor-pointer select-none transition-all duration-150 active:translate-y-0.5 ${
+            className={`group relative flex items-center justify-between p-3 rounded-2xl border-[2.5px] border-[#081326] cursor-pointer select-none transition-all duration-150 active:translate-y-0.5 ${
               form.is_lucid
                 ? "bg-[#16315c] shadow-[0_4px_0_0_#081326,inset_0_2px_0_0_rgba(255,224,130,0.25)]"
                 : "bg-[#0e2040] shadow-[0_3px_0_0_#081326] hover:bg-[#13284f]"
@@ -449,14 +442,14 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
               className="sr-only"
             />
 
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-2.5 min-w-0">
               <span
-                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-[#081326] shadow-[0_2px_0_0_#081326] transition-transform group-hover:scale-105 ${
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border-2 border-[#081326] shadow-[0_2px_0_0_#081326] transition-transform group-hover:scale-105 ${
                   form.is_lucid ? "bg-[#ffe082]" : "bg-[#183463]"
                 }`}
               >
                 <Sparkles
-                  size={18}
+                  size={16}
                   strokeWidth={2.6}
                   style={{ color: form.is_lucid ? "#081326" : "#ffe082" }}
                 />
@@ -466,7 +459,7 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
                 <span className="block text-xs font-extrabold text-white leading-tight">
                   Lucid Dream
                 </span>
-                <span className="block truncate text-[11px] font-semibold text-[#8cb2e0]">
+                <span className="block truncate text-[10px] font-semibold text-[#8cb2e0]">
                   I was aware I was dreaming
                 </span>
               </div>
@@ -474,19 +467,19 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
 
             {/* Custom Cartoon Checkbox Squircle */}
             <div
-              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 border-[#081326] transition-all ml-2 ${
+              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-lg border-2 border-[#081326] transition-all ml-2 ${
                 form.is_lucid
                   ? "bg-[#ffe082] text-[#081326] shadow-[0_2px_0_0_#081326] scale-105"
                   : "bg-[#09152b] text-transparent"
               }`}
             >
-              <Check size={14} strokeWidth={3.2} />
+              <Check size={12} strokeWidth={3.2} />
             </div>
           </label>
 
           {/* Recurring Dream Toggle Card */}
           <label
-            className={`group relative flex items-center justify-between p-3.5 rounded-2xl border-[2.5px] border-[#081326] cursor-pointer select-none transition-all duration-150 active:translate-y-0.5 ${
+            className={`group relative flex items-center justify-between p-3 rounded-2xl border-[2.5px] border-[#081326] cursor-pointer select-none transition-all duration-150 active:translate-y-0.5 ${
               form.is_recurring
                 ? "bg-[#16315c] shadow-[0_4px_0_0_#081326,inset_0_2px_0_0_rgba(100,223,208,0.25)]"
                 : "bg-[#0e2040] shadow-[0_3px_0_0_#081326] hover:bg-[#13284f]"
@@ -499,14 +492,14 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
               className="sr-only"
             />
 
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-2.5 min-w-0">
               <span
-                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-[#081326] shadow-[0_2px_0_0_#081326] transition-transform group-hover:scale-105 ${
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border-2 border-[#081326] shadow-[0_2px_0_0_#081326] transition-transform group-hover:scale-105 ${
                   form.is_recurring ? "bg-[#64dfd0]" : "bg-[#183463]"
                 }`}
               >
                 <Repeat
-                  size={18}
+                  size={16}
                   strokeWidth={2.6}
                   style={{ color: form.is_recurring ? "#081326" : "#64dfd0" }}
                 />
@@ -516,7 +509,7 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
                 <span className="block text-xs font-extrabold text-white leading-tight">
                   Recurring Dream
                 </span>
-                <span className="block truncate text-[11px] font-semibold text-[#8cb2e0]">
+                <span className="block truncate text-[10px] font-semibold text-[#8cb2e0]">
                   I&apos;ve experienced this before
                 </span>
               </div>
@@ -524,40 +517,40 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
 
             {/* Custom Cartoon Checkbox Squircle */}
             <div
-              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 border-[#081326] transition-all ml-2 ${
+              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-lg border-2 border-[#081326] transition-all ml-2 ${
                 form.is_recurring
                   ? "bg-[#64dfd0] text-[#081326] shadow-[0_2px_0_0_#081326] scale-105"
                   : "bg-[#09152b] text-transparent"
               }`}
             >
-              <Check size={14} strokeWidth={3.2} />
+              <Check size={12} strokeWidth={3.2} />
             </div>
           </label>
         </div>
 
         {/* Tags Section */}
-        <div>
-          <label htmlFor="tag-input" className="block text-sm font-extrabold text-[#cfe3fc] mb-2">
+        <div className="mt-4">
+          <label htmlFor="tag-input" className="block text-sm font-extrabold text-[#cfe3fc] mb-1.5">
             Sticker Tags
           </label>
 
           {/* Active Tags */}
           {form.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-3">
+            <div className="flex flex-wrap gap-1.5 mb-2.5">
               {form.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="inline-flex items-center gap-1 rounded-full border-2 border-[#081326] bg-[#1c396e] pl-3 pr-1.5 py-1 text-xs font-extrabold text-[#cfe3fc] shadow-[0_2px_0_0_#081326]"
+                  className="inline-flex items-center gap-1 rounded-full border-2 border-[#081326] bg-[#1c396e] pl-2.5 pr-1 py-0.5 text-xs font-extrabold text-[#cfe3fc] shadow-[0_2px_0_0_#081326]"
                 >
-                  <Hash size={11} strokeWidth={3} className="text-[#64dfd0]" />
+                  <Hash size={10} strokeWidth={3} className="text-[#64dfd0]" />
                   {tag}
                   <button
                     type="button"
                     onClick={() => removeTag(tag)}
                     aria-label={`Remove tag ${tag}`}
-                    className="flex h-5 w-5 items-center justify-center rounded-full hover:bg-white/15 text-[#ff859d]"
+                    className="flex h-4 w-4 items-center justify-center rounded-full hover:bg-white/15 text-[#ff859d]"
                   >
-                    <X size={12} strokeWidth={3} />
+                    <X size={10} strokeWidth={3} />
                   </button>
                 </span>
               ))}
@@ -573,7 +566,7 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={handleTagInputKeyDown}
-                className="cartoon-form-input h-12 text-sm"
+                className="cartoon-form-input h-11 text-sm"
                 placeholder="Add tags like flying, water, maze (press Enter)"
               />
             </div>
@@ -584,25 +577,25 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
                 setTagInput("");
               }}
               disabled={!tagInput.trim()}
-              className="cartoon-form-btn-secondary shrink-0 h-12 px-4 rounded-2xl text-xs font-extrabold disabled:opacity-50 inline-flex items-center gap-1.5 whitespace-nowrap active:translate-y-0.5"
+              className="cartoon-form-btn-secondary shrink-0 h-11 px-3.5 rounded-xl text-xs font-extrabold disabled:opacity-50 inline-flex items-center gap-1.5 whitespace-nowrap active:translate-y-0.5"
             >
-              <Plus size={16} strokeWidth={2.8} className="text-[#64dfd0]" />
+              <Plus size={14} strokeWidth={2.8} className="text-[#64dfd0]" />
               <span>Add</span>
             </button>
           </div>
 
           {/* Suggested Tags Cloud */}
           {suggestedTags.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 mt-3">
-              <span className="text-xs font-bold text-[#8cb2e0]">Suggested:</span>
+            <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
+              <span className="text-[11px] font-bold text-[#8cb2e0]">Suggested:</span>
               {suggestedTags.map((tag) => (
                 <button
                   key={tag}
                   type="button"
                   onClick={() => addTag(tag)}
-                  className="inline-flex items-center gap-1 rounded-full border-2 border-dashed border-[#5bb8ff]/60 bg-[#0e2040] px-3 py-1 text-xs font-bold text-[#5bb8ff] hover:bg-[#162e59]"
+                  className="inline-flex items-center gap-1 rounded-full border-2 border-dashed border-[#5bb8ff]/60 bg-[#0e2040] px-2.5 py-0.5 text-[11px] font-bold text-[#5bb8ff] hover:bg-[#162e59]"
                 >
-                  <Plus size={11} strokeWidth={3} /> #{tag}
+                  <Plus size={10} strokeWidth={3} /> #{tag}
                 </button>
               ))}
             </div>
@@ -613,27 +606,27 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
         {error && (
           <div
             role="alert"
-            className="flex items-center gap-3 rounded-2xl border-2 border-[#081326] bg-[#3a2340] px-4 py-3 text-sm font-bold text-[#ffd2db]"
+            className="flex items-center gap-2.5 rounded-xl border-2 border-[#081326] bg-[#3a2340] px-3.5 py-2.5 text-sm font-bold text-[#ffd2db] mt-4"
           >
-            <AlertTriangle size={17} className="shrink-0 text-[#ff859d]" strokeWidth={2.5} />
+            <AlertTriangle size={15} className="shrink-0 text-[#ff859d]" strokeWidth={2.5} />
             <span>{error}</span>
           </div>
         )}
 
         {/* Submit Actions */}
-        <div className="flex items-center gap-3 pt-3 border-t-2 border-[#081326]/50">
+        <div className="flex items-center gap-2.5 pt-4 mt-4 border-t-2 border-[#081326]/50">
           <button
             type="submit"
             disabled={saving}
-            className="cartoon-form-btn-primary inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl text-sm font-extrabold disabled:opacity-60"
+            className="cartoon-form-btn-primary inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-extrabold disabled:opacity-60"
           >
             {saving ? (
               <>
-                <Loader2 size={16} className="animate-spin" /> Saving entry…
+                <Loader2 size={15} className="animate-spin" /> Saving entry…
               </>
             ) : (
               <>
-                <Save size={16} strokeWidth={2.6} />
+                <Save size={15} strokeWidth={2.6} />
                 {mode === "edit" ? "Update Dream" : "Save to Storybook"}
               </>
             )}
@@ -641,7 +634,7 @@ export function DreamForm({ initialData, dreamId, mode }: DreamFormProps) {
 
           <Link
             href="/journal"
-            className="cartoon-form-btn-secondary px-5 py-3.5 rounded-2xl text-sm font-bold"
+            className="cartoon-form-btn-secondary px-4 py-3 rounded-xl text-sm font-bold"
           >
             Cancel
           </Link>
