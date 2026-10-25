@@ -6,10 +6,15 @@ export const metadata: Metadata = {
   description:
     "Understand the stories your mind tells at night. Log, organize, and explore patterns in your dreams with AI-powered insights.",
   keywords: ["dream journal", "lucid dreams", "dream tracker", "sleep journal", "stardrift"],
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
   openGraph: {
     title: "Stardrift",
     description: "Understand the stories your mind tells at night.",
     type: "website",
+    images: ["/logo.png"],
   },
 };
 

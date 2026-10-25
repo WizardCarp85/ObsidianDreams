@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Moon,
   Mic,
@@ -308,8 +309,15 @@ export default function LandingPage() {
             <nav className="flex items-center justify-between px-4 sm:px-6 h-16 rounded-2xl bg-[#132952]/95 backdrop-blur-md cartoon-card">
               {/* Brand */}
               <Link href="/" className="flex items-center gap-2.5 group">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#5bb8ff] border-[2.5px] border-[#081326] shadow-[0_3px_0_0_#081326] group-hover:-rotate-6 transition-transform">
-                  <Moon size={19} className="text-[#081326] fill-[#ffe082]" />
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#5bb8ff] border-[2.5px] border-[#081326] shadow-[0_3px_0_0_#081326] group-hover:-rotate-6 transition-transform overflow-hidden">
+                  <Image
+                    src="/logo.png"
+                    alt="Stardrift logo"
+                    width={40}
+                    height={40}
+                    className="h-full w-full object-contain p-1"
+                    priority
+                  />
                 </div>
                 <span className="text-lg sm:text-xl font-bold tracking-tight text-[#f4f9ff]">
                   Star<span className="text-[#6bc2ff]">drift</span>
@@ -735,8 +743,14 @@ export default function LandingPage() {
               {/* Brand Column */}
               <div className="md:col-span-6 space-y-4">
                 <Link href="/" className="inline-flex items-center gap-2.5 group">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-[#5bb8ff] border-2 border-[#081326] shadow-[0_2px_0_0_#081326]">
-                    <Moon size={16} className="text-[#081326] fill-[#ffe082]" />
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-[#5bb8ff] border-2 border-[#081326] shadow-[0_2px_0_0_#081326] overflow-hidden">
+                    <Image
+                      src="/logo.png"
+                      alt="Stardrift logo"
+                      width={36}
+                      height={36}
+                      className="h-full w-full object-contain p-0.5"
+                    />
                   </div>
                   <span className="text-lg font-bold text-white">
                     Star<span className="text-[#6bc2ff]">drift</span>

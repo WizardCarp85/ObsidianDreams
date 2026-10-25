@@ -2,7 +2,8 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ArrowLeft, LockKeyhole, Moon, Sparkles } from "lucide-react";
+import Image from "next/image";
+import { ArrowLeft, LockKeyhole, Sparkles } from "lucide-react";
 
 const STARS = Array.from({ length: 26 }, (_, i) => ({
   id: i,
@@ -236,12 +237,14 @@ export function AuthShell({ children }: { children: ReactNode }) {
             href="/"
             className="inline-flex items-center gap-3 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffe082]"
           >
-            <span className="flex h-12 w-12 items-center justify-center rounded-2xl border-[2.5px] border-[#081326] bg-[#5bb8ff] shadow-[0_3px_0_0_#081326]">
-              <Moon
-                size={23}
-                className="text-[#081326]"
-                fill="#ffe082"
-                strokeWidth={2.5}
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl border-[2.5px] border-[#081326] bg-[#5bb8ff] shadow-[0_3px_0_0_#081326] overflow-hidden">
+              <Image
+                src="/logo.png"
+                alt="Stardrift logo"
+                width={48}
+                height={48}
+                className="h-full w-full object-contain p-1"
+                priority
               />
             </span>
             <span className="text-left text-xl font-extrabold tracking-tight text-white">

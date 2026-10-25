@@ -3,7 +3,8 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import Link from "next/link";
-import { ArrowRight, Eye, EyeOff, Info, LockKeyhole, Mail, Moon } from "lucide-react";
+import Image from "next/image";
+import { ArrowRight, Eye, EyeOff, Info, LockKeyhole, Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { AuthShell } from "@/components/AuthShell";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
@@ -66,12 +67,13 @@ export default function SignInPage() {
         className="auth-cartoon-card rounded-[28px] bg-[#162e59] p-6 sm:p-8"
       >
         <div className="mb-5 flex justify-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border-[2.5px] border-[#081326] bg-[#5bb8ff] shadow-[0_4px_0_0_#081326]">
-            <Moon
-              size={26}
-              className="text-[#081326]"
-              fill="#ffe082"
-              strokeWidth={2.5}
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border-[2.5px] border-[#081326] bg-[#5bb8ff] shadow-[0_4px_0_0_#081326] overflow-hidden">
+            <Image
+              src="/logo.png"
+              alt="Stardrift logo"
+              width={56}
+              height={56}
+              className="h-full w-full object-contain p-1.5"
             />
           </div>
         </div>

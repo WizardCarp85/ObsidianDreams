@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
@@ -342,12 +343,14 @@ export function Sidebar() {
             collapsed ? "justify-center" : ""
           }`}
         >
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border-[2.5px] border-[#081326] bg-[#5bb8ff] shadow-[0_3px_0_0_#081326] group-hover:-rotate-6 transition-transform">
-            <Moon
-              size={20}
-              className="text-[#081326]"
-              fill="#ffe082"
-              strokeWidth={2.5}
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border-[2.5px] border-[#081326] bg-[#5bb8ff] shadow-[0_3px_0_0_#081326] group-hover:-rotate-6 transition-transform overflow-hidden">
+            <Image
+              src="/logo.png"
+              alt="Stardrift logo"
+              width={44}
+              height={44}
+              className="h-full w-full object-contain p-1"
+              priority
             />
           </div>
 
@@ -758,8 +761,15 @@ export function MobileHeader() {
       style={{ fontFamily: "'Quicksand', ui-rounded, 'Nunito', sans-serif" }}
     >
       <Link href="/" className="flex items-center gap-2.5 active:scale-95 transition-transform">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-[#081326] bg-[#5bb8ff] shadow-[0_2px_0_0_#081326]">
-          <Moon size={17} className="text-[#081326]" fill="#ffe082" strokeWidth={2.5} />
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-[#081326] bg-[#5bb8ff] shadow-[0_2px_0_0_#081326] overflow-hidden">
+          <Image
+            src="/logo.png"
+            alt="Stardrift logo"
+            width={36}
+            height={36}
+            className="h-full w-full object-contain p-0.5"
+            priority
+          />
         </div>
         <span className="text-base font-extrabold text-white">
           Star<span className="text-[#6bc2ff]">drift</span>
